@@ -1,0 +1,8 @@
+OS: XP, OS X, Red Hat
+Browser: IE, Firefox
+Protocol: IPv4, IPv6
+CPU: Intel, AMD
+DB: MySQL, Sybase, Oracle
+
+#下面这句要末尾加分号
+if [OS] <> "XP" THEN [Browser] <> "IE";

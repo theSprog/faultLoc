@@ -1,0 +1,7 @@
+[System]
+Name: TCAS
+
+[Parameter]
+u_l(enum): 0,1,2
+f_l(enum): 0,1,2
+act(enum): rd,wr
