@@ -1,9 +1,14 @@
 package nju.gist;
 
 import nju.gist.FaultResolver.CTA.CTAResolver;
+import nju.gist.FaultResolver.ComFIL.ComFILResolver;
+import nju.gist.FaultResolver.FIC.FICResolver;
 import nju.gist.FaultResolver.FaultResolver;
+import nju.gist.FaultResolver.InverseCTD.InverseCTDResolver;
 import nju.gist.FaultResolver.LG.LGKind;
 import nju.gist.FaultResolver.LG.LGResolver;
+import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
+import nju.gist.FaultResolver.RI.RIResolver;
 import nju.gist.FaultResolver.SP.SPResolver;
 import org.junit.Test;
 
@@ -19,7 +24,7 @@ public class FaultLocalizationTest {
 
     // common method
     private void execute(Consumer<FaultLocalization> flConsumer){
-        this.faultResolver = new LGResolver(LGKind.SafeValueLG);
+        this.faultResolver = new PendingSchemasResolver();
         flConsumer.accept(new FaultLocalization(filePath, faultResolver));
     }
 

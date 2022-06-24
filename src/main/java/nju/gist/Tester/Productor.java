@@ -8,7 +8,7 @@ import java.util.List;
 
 public class Productor {
     public static final int RIGHT = 1;
-    public static final int UNKNOWN = -1;
+    public static final int UNKNOWN = 0;
 
     public static int faultCaseSize = 0;
 
@@ -69,11 +69,11 @@ public class Productor {
     public static List<Integer> genMinFaultByEdge(int caseSize, AdvLG.Edge edge) {
         List<Integer> productRes = Arrays.asList(new Integer[caseSize]);
         for (int i = 0; i < caseSize; i++) {
-            productRes.set(i, -1);
+            productRes.set(i, UNKNOWN);
         }
 
-        productRes.set(edge.i, edge.i_set ? 1 : 0);
-        productRes.set(edge.j, edge.j_set ? 1 : 0);
+        productRes.set(edge.i, edge.i_set ? 2 : 1);
+        productRes.set(edge.j, edge.j_set ? 2 : 1);
 
         return productRes;
     }

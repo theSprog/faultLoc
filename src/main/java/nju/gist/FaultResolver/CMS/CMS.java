@@ -120,6 +120,7 @@ public class CMS {
 
     public Schema narrowFs(Schema fs) {
         Schema CandiMFS = (Schema) fs.clone();
+        // hss 代表局部的健康节点
         Set<Schema> hss = new HashSet<>(List.of(new Schema(fs.cardinality())));
 
         while (true){
@@ -136,6 +137,7 @@ public class CMS {
             if(fsIndex > -1){
                 return narrowFs(list.get(fsIndex));
             }
+            // 说明 list 没有 fault 了
             hss.add(list.get(list.size() - 1));
         }
     }

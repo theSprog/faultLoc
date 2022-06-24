@@ -35,7 +35,6 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
         FICBSStrategy,
         AugChainStrategy,
         CMSStrategy,
-        AIFLStrategy,
         RIStrategy,
     }
 
@@ -104,14 +103,14 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
     private boolean processPendingSchemas(Schema low, Schema up) {
         SchemasPath SchemasPath = new SchemasPath(low, up);
 
-        // 为策略保证上下文
-        Context context = new Context(SchemasPath, healthSchemas, faultSchemas, knownMinFaults);
+        // 为策略提供上下文
+        Context context = new Context(SchemasPath, healthSchemas, faultSchemas, knownMinFaults, faultCase);
 
         IStrategy strategy;
 
         // 用某种策略处理 pending,
         // TODO - 此处使用策略模式, 意味着策略可修改
-        StrategyKind strategyKind = StrategyKind.RIStrategy;
+        StrategyKind strategyKind = StrategyKind.FICStrategy;
 
         switch (strategyKind) {
             case FICStrategy:
@@ -125,13 +124,6 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
                 cms.setFSSAndHSS(faultSchemas, healthSchemas);
                 cms.setPendingResolver(this);
                 strategy = new CMSStrategy(cms);
-                break;
-            case AIFLStrategy:
-                AIFL aifl = new AIFL(checker, faultCase);
-                aifl.setTfailAndTpass(Tfail, Tpass);
-                aifl.setThreshold(faultCase.size());
-                aifl.setSuspMinFault(minFaults);
-                strategy = new AIFLStrategy(aifl);
                 break;
             case RIStrategy:
                 RI ri = new RI(checker, faultCase, faultCasePattern);
@@ -166,7 +158,7 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
      * @return the all PendingSchemas on this path
      * i.e. low = 0100, up = 0111
      * and the result would be [0100, 0101, 0110, 0111]
-     * low.equal(up) 是可以的, 例如 low = up = 0100, 则该函数返回 [0100]
+     * we allow that low.equal(up), for example low = up = 0100, and the result would be [0100]
      * 注意此处返回的不是set, 而是 list, 出于性能的考虑
      */
     private List<Schema> getAllPendingFromPath(Schema low, Schema up) {
@@ -234,7 +226,7 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
 
 
     public Set<Schema> getPendingSchemas() {
-        boolean allowUse = false;
+        boolean allowUse = true;
 
         if(!allowUse){
             String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();

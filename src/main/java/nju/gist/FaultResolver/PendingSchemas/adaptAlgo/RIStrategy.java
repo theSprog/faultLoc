@@ -22,7 +22,7 @@ public class RIStrategy implements IStrategy {
         boolean faultSchemasChanged = false;
 
 
-        SchemasPath pendingSchema = ctx.getPendingSchemas();
+        SchemasPath pendingSchema = ctx.getPendingSchemasPath();
         Set<Schema> faultSchemas = ctx.getFaultSchemas();
         Set<Schema> healthSchemas = ctx.getHealthSchemas();
         Set<Schema> knownMinFaults = ctx.getKnownMinFaults();

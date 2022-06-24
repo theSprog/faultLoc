@@ -4,12 +4,18 @@ import nju.gist.Common.Schema;
 
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.function.BiPredicate;
 
 public class SchemasUtil {
     // i.e. 1101 isSuper 0100,
     // 0100 == 1101 & 0100
+
+    /**
+     *
+     * @return true if schema is super schema of other
+     */
     public static boolean isSuperSchema(Schema schema, Schema other) {
         return getAnd(schema, other).equals(other);
     }
@@ -101,6 +107,12 @@ public class SchemasUtil {
         return res;
     }
 
+    /**
+     *
+     * @param healthSchemas: healthSchemas is this schema which pass the test case
+     * @param faultCasePattern: faultCasePattern provide the size of TRT root
+     * @return
+     */
     public static Set<Schema> updateLowBound(Set<Schema> healthSchemas, Schema faultCasePattern) {
         simplifyBound(healthSchemas, SchemasUtil::isSubSchema);
         Set<Schema> negHealthSchemas = negSchemas(healthSchemas, faultCasePattern);
@@ -133,5 +145,32 @@ public class SchemasUtil {
             }
         }
         bound.retainAll(list);
+    }
+
+    public static Schema tc2Schema(List<Integer> tc, List<Integer> faultCase) {
+        assert tc.size() == faultCase.size();
+        Schema res = new Schema(tc.size());
+        int size = tc.size();
+        for (int i = 0; i < size; i++) {
+            if(tc.get(i).equals(faultCase.get(i))){
+                res.set(i);
+            }
+        }
+        return res;
+    }
+
+    /**
+     * convert testcases to schemas
+     * @param htc
+     * @param faultCase
+     * @return
+     */
+    public static Set<Schema> tcs2Schemas(Set<List<Integer>> htc, List<Integer> faultCase) {
+        Set<Schema> res = new HashSet<>();
+        for (List<Integer> tc : htc) {
+            Schema schema = SchemasUtil.tc2Schema(tc, faultCase);
+            res.add(schema);
+        }
+        return res;
     }
 }

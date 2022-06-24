@@ -6,7 +6,9 @@ import nju.gist.FaultResolver.PendingSchemas.Context.Context;
 import nju.gist.FaultResolver.PendingSchemas.Context.ExecutionResult;
 import nju.gist.FaultResolver.PendingSchemas.Context.IStrategy;
 import nju.gist.FaultResolver.PendingSchemas.PendingSchemasRange.SchemasPath;
+import nju.gist.FaultResolver.PendingSchemas.SchemasUtil;
 
+import java.util.List;
 import java.util.Set;
 
 public class FICStrategy implements IStrategy {
@@ -22,18 +24,22 @@ public class FICStrategy implements IStrategy {
         boolean faultSchemasChanged = false;
 
 
-        SchemasPath pendingSchema = ctx.getPendingSchemas();
+        SchemasPath pendingSchemaPath = ctx.getPendingSchemasPath();
         Set<Schema> faultSchemas = ctx.getFaultSchemas();
         Set<Schema> healthSchemas = ctx.getHealthSchemas();
         Set<Schema> knownMinFaults = ctx.getKnownMinFaults();
+        List<Integer> faultCase = ctx.getFaultCase();
 
-        // fic 只需要上界, 但注意, 我么不改变原上界, 所以 clone 一份
-        Schema currentPattern = (Schema)pendingSchema.getUp().clone();
+        // fic only need upperBound, but we don't change the upperBound, so we clone it
+        Schema currentPattern = (Schema)pendingSchemaPath.getUp().clone();
         while (true) {
             Schema faultPattern = fic.extractOneFaultPattern(currentPattern);
             if (faultPattern == null) {
-                // 因为这句话只能被执行一次， 所以直接赋值
-                healthSchemasChanged = healthSchemas.add(currentPattern);
+                Set<List<Integer>> htc = fic.getChecker().getHtc();
+                Set<Schema> schemas = SchemasUtil.tcs2Schemas(htc, faultCase);
+                healthSchemasChanged = healthSchemas.addAll(schemas);
+                // 清除上一轮的HSS，否则会造成重复计算，影响性能
+                fic.getChecker().clearHtc();
                 break;
             }
             // 而这句话可能被执行多次, 所以需要用 |= 来查看是否有 changed

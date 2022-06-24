@@ -16,6 +16,10 @@ public class FIC {
         this.size = faultCase.size();
     }
 
+    public Checker getChecker() {
+        return checker;
+    }
+
     public void removeFaultPattern(Schema node, Schema faultPattern){
         node.xor(faultPattern);
     }

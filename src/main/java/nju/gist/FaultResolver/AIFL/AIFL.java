@@ -9,45 +9,22 @@ import java.util.*;
 public class AIFL {
     private final Checker checker;
     private final List<Integer> faultCase;
+    private final List<Set<Integer>> Values;
     private int Threshold;
     private Set<List<Integer>> Tfail;
     private Set<List<Integer>> Tpass;
-    private List<List<Integer>> suspMinFaults;
 
-    // 每个参数能取的值的集合
-    // i.e. Values[0] = {2, 3} 代表第 0 个参数能取 3 和 2.
-    private List<Set<Integer>> Values;
-
-    public AIFL(Checker checker, List<Integer> faultCase) {
+    public AIFL(Checker checker, List<Integer> faultCase, List<Set<Integer>> Values) {
         this.checker = checker;
         this.faultCase = faultCase;
-        Values = new ArrayList<>();
-        for (int i = 0; i < faultCase.size(); i++) {
-            Values.add(new HashSet<>());
-        }
+        this.Values = Values;
     }
 
     public void setThreshold(int Threshold){
         this.Threshold = Threshold;
     }
 
-    public void setSuspMinFault(List<List<Integer>> suspMinFaults) {
-        this.suspMinFaults = suspMinFaults;
-    }
-
     public void setTfailAndTpass(List<List<Integer>> Tfail, List<List<Integer>> Tpass) {
-        for (List<Integer> testCase : Tfail) {
-            for (int i = 0; i < testCase.size(); i++) {
-                Values.get(i).add(testCase.get(i));
-            }
-        }
-
-        for (List<Integer> testCase : Tpass) {
-            for (int i = 0; i < testCase.size(); i++) {
-                Values.get(i).add(testCase.get(i));
-            }
-        }
-
         this.Tfail = new HashSet<>(Tfail);
         this.Tpass = new HashSet<>(Tpass);
     }
@@ -62,10 +39,6 @@ public class AIFL {
 
     public int getFaultCaseSize() {
         return faultCase.size();
-    }
-
-    public List<List<Integer>> getSuspMinFaults() {
-        return suspMinFaults;
     }
 
     public int getThreshold() {

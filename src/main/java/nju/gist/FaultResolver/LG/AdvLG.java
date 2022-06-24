@@ -69,9 +69,9 @@ public class AdvLG extends LG{
     private Schema tc2s(List<Integer> testCase) throws InvalidPropertiesFormatException {
         Schema res = new Schema(testCase.size());
         for (int i = 0; i < testCase.size(); i++) {
-            if(testCase.get(i) == 0){
+            if(testCase.get(i) == 1){   // set 1 to bool 0
                 res.clear(i);
-            }else if(testCase.get(i) == 1){
+            }else if(testCase.get(i) == 2){ // set 2 to bool 1
                 res.set(i);
             }else {
                 throw new InvalidPropertiesFormatException("AdvLG can just deal with g = 2, namely 0-1 problem");
@@ -84,14 +84,23 @@ public class AdvLG extends LG{
         List<Integer> res = new ArrayList<>(schema.size());
         for (int i = 0; i < schema.size(); i++) {
             if(schema.get(i)){
-                res.add(1);
+                res.add(2);
             }else {
-                res.add(0);
+                res.add(1);
             }
         }
         return res;
     }
 
+    /**
+     * 1−0 inside Ap,1−1 inside As,1−1 inside B,
+     * 1−1 between As and B,
+     * 1-0 between As and C0,
+     * 1−1 between As and C1
+     * @param Tfail
+     * @return
+     * @throws InvalidPropertiesFormatException
+     */
     private Set<Edge> locateError(List<List<Integer>> Tfail) throws InvalidPropertiesFormatException {
         Set<Edge> resE = new HashSet<>();
 
@@ -102,15 +111,17 @@ public class AdvLG extends LG{
         }
         Set<Integer> As = new HashSet<>(), Ap = new HashSet<>();
         Set<Edge> Ep = DiscoverEp(A, As, Ap);
-        resE.addAll(Ep);
+        resE.addAll(Ep);    // 1−0 inside Ap done
 
         Schema fault_11_inB = new Schema(caseSize);
         fault_11_inB.set(0, caseSize);
         for (Integer a : A) {
             fault_11_inB.clear(a);
-        }
+        }// 1-1 inside B
 
-        Set<Integer> B = locateErrorInTest(fault_11_inB, resE);
+        Set<Integer> B = locateErrorInTest(fault_11_inB, resE); // 1−1 inside B done
+
+        // C = All - (A+B)
         Set<Integer> C = Stream.iterate(0, n -> n + 1)
                 .limit(caseSize)
                 .filter(i -> !(A.contains(i) || B.contains(i)))
@@ -121,7 +132,7 @@ public class AdvLG extends LG{
         for (Integer f : As) {
             // Fix Tf = 1 and Ti = 0 for all i in (A \/ B)\{f}
             Schema T = new Schema(caseSize);
-            T.set(f);
+            T.set(f);   // Tf = 1
 
             List<Integer> list = new ArrayList<>(C);
             for (int bitPattern = 0; bitPattern < (1 << C.size()); bitPattern++) {
@@ -146,20 +157,25 @@ public class AdvLG extends LG{
 
                 boolean pass = checker.executeTestCase(s2tc(T1));
                 if(!pass){
-                    resE.add(new Edge(f, true, b, true));
+                    resE.add(new Edge(f, true, b, true));   // 1 - 1 between As and B done
                 }
 
                 T1.clear(b);
             }
 
             // we don't use SearchEndPoint but iterating for convenience
+            // C0 is 0 in C which would cause fault, C1 is 1 in C which would cause fault
             Schema T2 = (Schema)T.clone();
             for (Integer c : C) {
                 T2.flip(c);
 
                 boolean pass = checker.executeTestCase(s2tc(T2));
                 if(!pass){
+                    // 1-0 inside As and C0 done
+                    // 1-1 inside As and C1 done
                     resE.add(new Edge(f, true, c, T2.get(c)));
+
+                    // record C0, we don't care C1
                     if(!T2.get(c)){
                         C0.add(c);
                     }
@@ -173,7 +189,7 @@ public class AdvLG extends LG{
         if(As.size() >= 2){
             Schema T = new Schema(caseSize);
             for (Integer c : C0) {
-                T.set(c);
+                T.set(c);       // avoid 1-0 inside As and C0
             }
 
             for (Integer i : As) {
@@ -184,7 +200,7 @@ public class AdvLG extends LG{
 
                         boolean pass = checker.executeTestCase(s2tc(T));
                         if(!pass){
-                            resE.add(new Edge(i, true, j, true));
+                            resE.add(new Edge(i, true, j, true));   // 1-1 in As done
                         }
 
                         T.clear(j);

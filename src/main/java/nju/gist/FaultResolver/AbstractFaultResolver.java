@@ -22,11 +22,15 @@ public abstract class AbstractFaultResolver implements FaultResolver{
     // 参数规模
     protected int size;
 
+    // the pattern of MFS, such as 1001 or 1100 where 1 denotes existence of factor
     protected Set<Schema> knownMinFaults;
 
-    // 真正的处理结果
+    // the real MFS of faultCase, such as {2,0,0,3} or {3,3,0,0} where 0 denotes -
     protected List<List<Integer>> minFaults;
 
+    // 每个参数能取的值的集合
+    // i.e. Values[0] = {2, 3} 代表第 0 个参数能取 3 和 2.
+    protected List<Set<Integer>> Values;
 
     @Override
     public void setTfailAndTpass(List<List<Integer>> Tfail, List<List<Integer>> Tpass) {
@@ -38,6 +42,7 @@ public abstract class AbstractFaultResolver implements FaultResolver{
     public void setFaultCase(List<Integer> faultCase) {
         this.faultCase = faultCase;
         this.size = faultCase.size();
+        this.checker.clearHtc();
 
         // 如果是第一次调用，则初始化，否则不变
         if(this.faultCasePattern == null || this.faultCasePattern.length() != this.size){
@@ -62,7 +67,27 @@ public abstract class AbstractFaultResolver implements FaultResolver{
 
     @Override
     public void initFromCA(List<List<Integer>> faultCaseList, List<List<Integer>> healthCaseList) {
-        setFaultCase(faultCaseList.get(0));
+        if(!faultCaseList.isEmpty()) setFaultCase(faultCaseList.get(0));
+        else {setFaultCase(healthCaseList.get(0));}
+
+        Values = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            Values.add(new HashSet<>());
+        }
+
+        for (List<Integer> testCase : faultCaseList) {
+            for (int i = 0; i < testCase.size(); i++) {
+                Values.get(i).add(testCase.get(i));
+            }
+        }
+
+        for (List<Integer> testCase : healthCaseList) {
+            for (int i = 0; i < testCase.size(); i++) {
+                Values.get(i).add(testCase.get(i));
+            }
+        }
+
+
     }
 
     @Override

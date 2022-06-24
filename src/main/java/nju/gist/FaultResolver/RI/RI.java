@@ -33,7 +33,7 @@ public class RI {
         Schema S = (Schema) currentPattern.clone();
         Schema S_related = new Schema(S.size());
         while (true) {
-            Schema errorFactor = isolate(S, currentPattern);
+            Schema errorFactor = isolate(currentPattern, S);
             S_related.or(errorFactor);
             pass = checker.executeTestCase(Productor.genTestCase(S_related, faultCase));
             if (pass) {
@@ -52,6 +52,12 @@ public class RI {
         }
     }
 
+    /**
+     *
+     * @param currentPattern
+     * @param S_unrelated
+     * @return currentPattern - (S1 u S_unrelated)
+     */
     private Schema genTnext(Schema currentPattern, Schema S_unrelated){
         Schema temp = SchemasUtil.getOr(S1, S_unrelated);
         Schema Tnext = (Schema) currentPattern.clone();
@@ -65,7 +71,7 @@ public class RI {
         return Tnext;
     }
 
-    private Schema isolate(Schema susp_schema, Schema currentPattern) {
+    private Schema isolate(Schema currentPattern, Schema susp_schema) {
         Schema S = (Schema) susp_schema.clone();
         Schema S_unrelated = new Schema(susp_schema.size());
 
@@ -81,6 +87,7 @@ public class RI {
             }
         }
 
+        // S.cardinality() == 1
         return S;
     }
 

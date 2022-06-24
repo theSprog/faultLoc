@@ -18,8 +18,8 @@ public class CMSStrategy implements IStrategy {
 
     @Override
     public ExecutionResult execute(Context ctx) {
-        cms.updateFSS(ctx.getPendingSchemas().getUp());
-        cms.updateHSS(ctx.getPendingSchemas().getLow());
+        cms.updateFSS(ctx.getPendingSchemasPath().getUp());
+        cms.updateHSS(ctx.getPendingSchemasPath().getLow());
 
         Set<Schema> knownMinFaults = ctx.getKnownMinFaults();
 

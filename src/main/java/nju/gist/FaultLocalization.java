@@ -1,11 +1,13 @@
 package nju.gist;
 
+import nju.gist.Common.Schema;
 import nju.gist.FaultResolver.FaultResolver;
 import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
 import nju.gist.FileResolver.CSVResolver;
 import nju.gist.Tester.Checker;
 
 import java.util.List;
+import java.util.Set;
 
 
 public class FaultLocalization {
@@ -54,7 +56,7 @@ public class FaultLocalization {
 
             long startMil = System.currentTimeMillis();
             long pendingSchemasSize = ((PendingSchemasResolver) faultResolver).getPendingSchemasSize();
-//            Set<BitSet> pendingSchemas = ((PendingSchemasResolver) faultResolver).getPendingSchemas();
+//            Set<Schema> pendingSchemas = ((PendingSchemasResolver) faultResolver).getPendingSchemas();
             long endMil = System.currentTimeMillis();
 
             System.out.println(faultCase + " fails, \n" +

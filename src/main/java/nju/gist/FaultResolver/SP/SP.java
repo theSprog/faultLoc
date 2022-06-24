@@ -90,6 +90,9 @@ public class SP {
         }
     }
 
+    /**
+     * @return TwayComb(Tfail) - TwayComb(Tpass)
+     */
     public Set<List<Integer>> getAllSuspiciousCombinations(){
         Set<List<Integer>> res = new HashSet<>();
         for (List<Integer> failCase : tfail) {
@@ -101,6 +104,12 @@ public class SP {
         return res;
     }
 
+    /**
+     * all combinations each contain <degree> factors from failCase
+     * @param degree
+     * @param failCase
+     * @return
+     */
     private Set<List<Integer>> getTwayCombinations(int degree, List<Integer> failCase) {
         Set<List<Integer>> res = new HashSet<>();
         int size = failCase.size();

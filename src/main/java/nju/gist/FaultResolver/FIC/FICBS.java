@@ -39,7 +39,9 @@ public class FICBS {
         }
 
         Schema tempNode = (Schema) node.clone();
+        // faultPattern 已经发现的故障因子
         Schema faultPattern = new Schema(size);
+        // U 已经排除的安全因子
         Schema U = new Schema(size);
 
         while (true){
@@ -77,7 +79,10 @@ public class FICBS {
         return Ccand;
     }
 
-    //  deduct 会改变第一个参数的值
+    /**
+     * deduct(A, B) : A = A-B
+     * deduct will change the first para
+     */
     private void deduct(Schema Ccand, Schema U) {
         if(U == null) return;
 

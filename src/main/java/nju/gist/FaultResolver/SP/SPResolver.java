@@ -15,7 +15,7 @@ public class SPResolver extends AbstractFaultResolver {
 
     @Override
     public List<List<Integer>> findMinFaults() {
-        int piHatSize;
+        int piHatSize;  // Π‘
         int piSize = 0;
 
         while (true){
