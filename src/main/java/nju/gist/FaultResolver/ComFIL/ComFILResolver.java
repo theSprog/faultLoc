@@ -1,12 +1,12 @@
 package nju.gist.FaultResolver.ComFIL;
 
+import nju.gist.Common.Comb;
+import nju.gist.Common.MinFault;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AbstractFaultResolver;
-import nju.gist.FaultResolver.PendingSchemas.SchemasUtil;
-import nju.gist.Tester.Checker;
 import nju.gist.Tester.Productor;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -14,25 +14,27 @@ public class ComFILResolver extends AbstractFaultResolver {
     private ComFIL comFIL;
 
     @Override
-    public List<List<Integer>> findMinFaults() {
-        Set<List<Integer>> resolve = resolve();
-        minFaults.addAll(resolve);
+    public List<MinFault> findMinFaults() {
+        Set<Comb> resolve = resolve();
+        for (Comb combination : resolve) {
+            minFaults.add(new MinFault(combination));
+        }
         return minFaults;
     }
 
-    private Set<List<Integer>> resolve(){
+    private Set<Comb> resolve(){
         comFIL = new ComFIL();
 
-        Set<List<Integer>> faultCasePowerSet = comFIL.powerSet(faultCase);
-        Set<List<Integer>> tPassPowerSet = new HashSet<>();
-        for (List<Integer> tpass : Tpass) {
+        Set<Comb> faultCasePowerSet = comFIL.powerSet(faultCase);
+        Set<Comb> tPassPowerSet = new HashSet<>();
+        for (TestCase tpass : Tpass) {
             tPassPowerSet.addAll(comFIL.powerSet(tpass));
         }
 
-        Set<List<Integer>> candFIS = comFIL.minus(faultCasePowerSet, tPassPowerSet);
-        Set<List<Integer>> copy = new HashSet<>(candFIS);
-        for (List<Integer> candFI : candFIS) {
-            boolean pass = checker.executeTestCase(candFI);
+        Set<Comb> candFIS = comFIL.minus(faultCasePowerSet, tPassPowerSet);
+        Set<Comb> copy = new HashSet<>(candFIS);
+        for (Comb candFI : candFIS) {
+            boolean pass = checker.executeTestCase(Productor.genTestCase(candFI));
             if(pass){
                 copy.removeIf(cand -> comFIL.isSubInteraction(cand, candFI));
             }else {

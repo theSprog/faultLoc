@@ -1,20 +1,22 @@
 package nju.gist.FaultResolver.AIFL;
 
+import nju.gist.Common.Comb;
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.Tester.Checker;
-import nju.gist.Tester.Productor;
+import org.raistlic.common.permutation.Combination;
 
 import java.util.*;
 
 public class AIFL {
     private final Checker checker;
-    private final List<Integer> faultCase;
+    private final TestCase faultCase;
     private final List<Set<Integer>> Values;
     private int Threshold;
-    private Set<List<Integer>> Tfail;
-    private Set<List<Integer>> Tpass;
+    private Set<TestCase> Tfail;
+    private Set<TestCase> Tpass;
 
-    public AIFL(Checker checker, List<Integer> faultCase, List<Set<Integer>> Values) {
+    public AIFL(Checker checker, TestCase faultCase, List<Set<Integer>> Values) {
         this.checker = checker;
         this.faultCase = faultCase;
         this.Values = Values;
@@ -24,16 +26,18 @@ public class AIFL {
         this.Threshold = Threshold;
     }
 
-    public void setTfailAndTpass(List<List<Integer>> Tfail, List<List<Integer>> Tpass) {
+    public void setTfailAndTpass(List<TestCase> Tfail, List<TestCase> Tpass) {
         this.Tfail = new HashSet<>(Tfail);
         this.Tpass = new HashSet<>(Tpass);
     }
 
-    public Set<List<Integer>> getTfail() {
-        return Tfail;
+    public Set<TestCase> getTfail() {
+        // one faultCase for one iteration
+        return new HashSet<>(List.of(faultCase));
+//        return Tfail;
     }
 
-    public Set<List<Integer>> getTpass() {
+    public Set<TestCase> getTpass() {
         return Tpass;
     }
 
@@ -45,39 +49,32 @@ public class AIFL {
         return Threshold;
     }
 
-    public Set<List<Integer>> getSchemaSet(Set<List<Integer>> T){
-        Set<List<Integer>> res = new HashSet<>();
+    public Set<Comb> getCombinationSet(Set<TestCase> T){
+        Set<Comb> res = new HashSet<>();
 
-        for (List<Integer> testCase : T) {
-            res.addAll(getAllSchemaFromTestCase(testCase));
+        for (TestCase testCase : T) {
+            res.addAll(testCase.powerSet());
         }
 
         return res;
     }
 
-    private Set<List<Integer>> getAllSchemaFromTestCase(List<Integer> testCase) {
-        Set<List<Integer>> res = new HashSet<>();
-
-        Schema casePattern = new Schema(testCase.size());
-        casePattern.set(0, testCase.size());
-
-        ArrayList<Schema> list = new ArrayList<>(1 << testCase.size());
-        list.add(new Schema(testCase.size()));
-
-        int factorIndex = casePattern.nextSetBit(0);
-        while (factorIndex != -1) {
-            int curLen = list.size();
-            for (int i = 0; i < curLen; i++) {
-                Schema temp = (Schema) list.get(i).clone();
-                temp.set(factorIndex);
-                res.add(Productor.genSchema(temp, testCase));
-                list.add(temp);
-            }
-            factorIndex = casePattern.nextSetBit(factorIndex + 1);
-        }
-
-        return res;
-    }
+//    private Set<Comb> getAllCombinations(TestCase testCase) {
+//        Set<Comb> res = new HashSet<>();
+//        List<Integer> testCaseIndex = new ArrayList<>();
+//        for (int i = 0; i < testCase.size(); i++) {
+//            testCaseIndex.add(i);
+//        }
+//
+//        for (int i = 1; i <= testCase.size(); i++) {
+//            Combination<Integer> combinationIndex = Combination.of(testCaseIndex, i);
+//            for (List<Integer> combIndex : combinationIndex) {
+//                res.add(new Comb(testCase, combIndex));
+//            }
+//        }
+//
+//        return res;
+//    }
 
     /**
      * 求两集合的差集, 注意此函数不会改变输入参数 A B
@@ -85,9 +82,9 @@ public class AIFL {
      * @param B {[1],{2]}
      * @return  {[1,2]}
      */
-    public Set<List<Integer>> minus(Set<List<Integer>> A, Set<List<Integer>> B) {
-        Set<List<Integer>> res = new HashSet<>();
-        for (List<Integer> a : A) {
+    public Set<Comb> minus(Set<Comb> A, Set<Comb> B) {
+        Set<Comb> res = new HashSet<>();
+        for (Comb a : A) {
             if(!B.contains(a)){
                 res.add(a);
             }
@@ -95,32 +92,36 @@ public class AIFL {
         return res;
     }
 
-    public Set<List<Integer>> generateAT(int strength, Set<List<Integer>> Tfail) {
-        Set<List<Integer>> res = new HashSet<>();
-        for (List<Integer> failTestCase : Tfail) {
+    /**
+     * generate additional test suite for strength-th iteration
+     * @param strength
+     * @param Tfail
+     * @return
+     */
+    public Set<TestCase> generateAT(int strength, Set<TestCase> Tfail) {
+        Set<TestCase> res = new HashSet<>();
+        for (TestCase failTestCase : Tfail) {
             res.addAll(mutate(strength, failTestCase));
         }
         return res;
     }
 
-    private Set<List<Integer>> mutate(int strength, List<Integer> failTestCase) {
-        Set<List<Integer>> res = new HashSet<>();
-        // 找到哪些地方应该替换
-        Set<Schema> allPositions = getAllPossiblePositions(failTestCase.size(), strength);
+    private Set<TestCase> mutate(int strength, TestCase failTestCase) {
+        Set<TestCase> res = new HashSet<>();
+        // Find allPositions to replace values
+        Set<List<Integer>> allPositions = getAllPossiblePositions(failTestCase.size(), strength);
 
-        for (Schema position : allPositions) {
-            int nextSetBitIndex = position.nextSetBit(0);
-            List<Integer> newTestCase = new ArrayList<>(failTestCase);
-            while (nextSetBitIndex != -1) {
-                int prepareValue = 0;
-                Set<Integer> values = Values.get(nextSetBitIndex);
+        for (List<Integer> positions : allPositions) {
+            TestCase newTestCase = failTestCase.clone();
+            // mutate values in positions
+            for (Integer position : positions) {
+                Set<Integer> values = Values.get(position);
                 for (int value : values) {
-                    if(value != newTestCase.get(nextSetBitIndex)) {
-                        prepareValue = value;
+                    if(value != newTestCase.get(position)) {
+                        newTestCase.set(position, value);
+                        break;
                     }
                 }
-                newTestCase.set(nextSetBitIndex, prepareValue);
-                nextSetBitIndex = position.nextSetBit(nextSetBitIndex + 1);
             }
             res.add(newTestCase);
         }
@@ -128,32 +129,25 @@ public class AIFL {
         return res;
     }
 
-    private Set<Schema> getAllPossiblePositions(int size, int strength) {
-        Set<Schema> res = new HashSet<>();
+    private Set<List<Integer>> getAllPossiblePositions(int size, int strength) {
+        Set<List<Integer>> res = new HashSet<>();
 
-        long s = (1L << strength) - 1;
-        while (s < (1L << size)) {
-            Schema Schema = new Schema(size);
-            long temp = s;
-            for (int i = 0; i < size; i++) {
-                if(temp % 2 == 1) Schema.set(i);
-                temp = temp >> 1;
-                if(temp == 0) break;
-            }
-            res.add(Schema);
-
-            // don't ask me what this is, I don't know, but it works !!!
-            long x = s & -s;
-            long y = s + x;
-            s = ((s & ~y) / x >> 1) | y;
+        List<Integer> caseIndex = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            caseIndex.add(i);
+        }
+        Combination<Integer> combinationIndex = Combination.of(caseIndex, strength);
+        for (List<Integer> combIndex : combinationIndex) {
+            res.add(new ArrayList<>(combIndex));
         }
 
         return res;
     }
 
-    public Set<List<Integer>> getATpass(Set<List<Integer>> AT) {
-        Set<List<Integer>> res = new HashSet<>();
-        for (List<Integer> t : AT) {
+    public Set<TestCase> getATpass(Set<TestCase> AT) {
+        Set<TestCase> res = new HashSet<>();
+        for (TestCase t : AT) {
+            // if t pass the checker, add it to Tpass
             if(checker.executeTestCase(t)) {
                 res.add(t);
             }

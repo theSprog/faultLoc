@@ -19,9 +19,9 @@ public class Parts {
         private void partition() {
             left = new Schema(faultPattern.size());
 
-            int totalNum = faultPattern.cardinality();
+            int totalOneNum = faultPattern.cardinality();
             int nextSetBitIndex = faultPattern.nextSetBit(0);
-            for (int i = 0; i < totalNum/2; i++) {
+            for (int i = 0; i < totalOneNum/2; i++) {
                 left.set(nextSetBitIndex);
                 nextSetBitIndex = faultPattern.nextSetBit(nextSetBitIndex+1);
             }

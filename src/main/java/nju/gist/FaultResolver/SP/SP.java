@@ -1,15 +1,26 @@
 package nju.gist.FaultResolver.SP;
 
 
+import nju.gist.Common.Comb;
+import nju.gist.Common.TestCase;
+import nju.gist.Tester.Productor;
+import org.raistlic.common.permutation.Combination;
+
 import java.util.*;
 
 public class SP {
+    /*
+    A Combination is also a TestCase, but the difference is
+    all combinations each contain "degree" factors from TestCase,
+    and other positions is replaced placeholder "DUMMY_VALUE"
+    i.e. (1,2,3,4) is a TestCase, and (-, 3, 2, 4) is a Combination
+     */
     private static final int DUMMY_VALUE = 0;
     // degree denotes the t of t-way
     private final int degree;
 
-    private List<List<Integer>> tpass;
-    private List<List<Integer>> tfail;
+    private List<TestCase> tpass;
+    private List<TestCase> tfail;
 
     // the number of failCase among testSet
     private int failCaseSize;
@@ -38,14 +49,14 @@ public class SP {
     private List<Set<pair>> rhoList;
 
     private class piItem {
-        public List<Integer> suspComb;
+        public Comb suspComb;
         public double rhoC;
         public int Rc;
         public double rhoE;
         public int Re;
         public int R;   // equals to Rc + Re
 
-        public piItem(List<Integer> suspComb, double rhoC, double rhoE) {
+        public piItem(Comb suspComb, double rhoC, double rhoE) {
             this.suspComb = suspComb;
             this.rhoC = rhoC;
             this.rhoE = rhoE;
@@ -56,7 +67,7 @@ public class SP {
         this.degree = degree;
     }
 
-    public void setTpassAndTfail(List<List<Integer>> tpass, List<List<Integer>> tfail) {
+    public void setTpassAndTfail(List<TestCase> tpass, List<TestCase> tfail) {
         this.tpass = tpass;
         this.tfail = tfail;
         this.failCaseSize = tfail.size();
@@ -69,22 +80,8 @@ public class SP {
 
         // if the method is executed for the first time
         if(this.Values == null) {
-            this.Values = new ArrayList<>();
+            this.Values = Productor.ParaValues;
             this.rhoList = new ArrayList<>();
-            for (int i = 0; i < faultCaseSize; i++) {
-                Values.add(new HashSet<>());
-            }
-
-            for (List<Integer> testCase : tfail) {
-                for (int i = 0; i < testCase.size(); i++) {
-                    Values.get(i).add(testCase.get(i));
-                }
-            }
-            for (List<Integer> testCase : tpass) {
-                for (int i = 0; i < testCase.size(); i++) {
-                    Values.get(i).add(testCase.get(i));
-                }
-            }
         }else {
             this.rhoList.clear();
         }
@@ -93,10 +90,10 @@ public class SP {
     /**
      * @return TwayComb(Tfail) - TwayComb(Tpass)
      */
-    public Set<List<Integer>> getAllSuspiciousCombinations(){
-        Set<List<Integer>> res = new HashSet<>();
-        for (List<Integer> failCase : tfail) {
-            Set<List<Integer>> combs = getTwayCombinations(degree, failCase);
+    public Set<Comb> getAllSuspiciousCombinations(){
+        Set<Comb> res = new HashSet<>();
+        for (TestCase failCase : tfail) {
+            Set<Comb> combs = getTwayCombinations(degree, failCase);
             res.addAll(combs);
         }
         res.removeIf(this::containedInPass);
@@ -105,37 +102,30 @@ public class SP {
     }
 
     /**
-     * all combinations each contain <degree> factors from failCase
+     * all combinations each contain "degree" factors from failCase,
+     * and other positions is replaced placeholder "DUMMY_VALUE"
      * @param degree
      * @param failCase
      * @return
      */
-    private Set<List<Integer>> getTwayCombinations(int degree, List<Integer> failCase) {
-        Set<List<Integer>> res = new HashSet<>();
-        int size = failCase.size();
-        long s = (1L << degree) - 1;
+    private Set<Comb> getTwayCombinations(int degree, TestCase failCase) {
+        Set<Comb> res = new HashSet<>();
 
-        while (s < (1L << size)) {
-            List<Integer> comb = new ArrayList<>(failCase);
-
-            // we cannot change s in the loop, so we need temp
-            long temp = s;
-            for (int i = 0; i < size; i++) {
-                if (temp % 2 == 0) comb.set(size-(i+1), DUMMY_VALUE);
-                temp = temp >> 1;
-            }
-            res.add(comb);
-
-            // don't ask me what this is, I don't know, but it works !!!
-            long x = s & -s;
-            long y = s + x;
-            s = ((s & ~y) / x >> 1) | y;
+        List<Integer> testCaseIndex = new ArrayList<>();
+        for (int i = 0; i < failCase.size(); i++) {
+            testCaseIndex.add(i);
         }
+
+        Combination<Integer> combinationIndex = Combination.of(testCaseIndex, degree);
+        for (List<Integer> combIndex : combinationIndex) {
+            res.add(new Comb(failCase, combIndex));
+        }
+
         return res;
     }
 
-    private boolean containedInPass(List<Integer> comb) {
-        for (List<Integer> passCase : tpass) {
+    private boolean containedInPass(Comb comb) {
+        for (TestCase passCase : tpass) {
             if(containedIn(comb, passCase)){
                 return true;
             }
@@ -144,15 +134,16 @@ public class SP {
     }
 
     /**
-     *
+     *(1,2,3,4) contain (-, 2, 3, -)
      * @param comb
      * @param passCase
-     * @return true if comb contained in passCase, false otherwise
+     * @return true if comb is contained in passCase, false otherwise
      */
-    private boolean containedIn(List<Integer> comb, List<Integer> passCase) {
+    private boolean containedIn(Comb comb, TestCase testCase) {
+        assert comb.size() == testCase.size();
         int size = comb.size();
         for (int i = 0; i < size; i++) {
-            if(comb.get(i) != DUMMY_VALUE && !comb.get(i).equals(passCase.get(i))){
+            if(comb.get(i) != DUMMY_VALUE && !comb.get(i).equals(testCase.get(i))){
                 return false;
             }
         }
@@ -164,8 +155,8 @@ public class SP {
      * @param pi
      * @return
      */
-    public List<List<Integer>> rank(Set<List<Integer>> pi) {
-        ArrayList<List<Integer>> res = new ArrayList<>();
+    public List<Comb> rank(Set<Comb> pi) {
+        List<Comb> res = new ArrayList<>();
         // just return an empty list
         if(piSize == 0) return res;
 
@@ -177,7 +168,7 @@ public class SP {
         }
 
         List<piItem> itemTable = new ArrayList<>();
-        for (List<Integer> suspComb : pi) {
+        for (Comb suspComb : pi) {
             double rhoC = rhoC(suspComb, pi);
             double rhoE = rhoE(suspComb, pi, tfail, tpass);
             itemTable.add(new piItem(suspComb, rhoC, rhoE));
@@ -218,18 +209,18 @@ public class SP {
         return res;
     }
 
-    private double rhoE(List<Integer> suspComb, Set<List<Integer>> pi, List<List<Integer>> tfail, List<List<Integer>> tpass) {
+    private double rhoE(Comb suspComb, Set<Comb> pi, List<TestCase> tfail, List<TestCase> tpass) {
         double rhoE = Double.MAX_VALUE;
-        for (List<Integer> failCase : tfail) {
+        for (TestCase failCase : tfail) {
             if(containedIn(suspComb, failCase)){
-                List<Integer> complementaryComb = getComplementaryComb(suspComb, failCase);
+                Comb complementaryComb = getComplementaryComb(suspComb, failCase);
                 double rhoC = rhoC(complementaryComb, pi);
                 rhoE = Math.min(rhoE, rhoC);
             }
         }
-        for (List<Integer> passCase : tpass) {
+        for (TestCase passCase : tpass) {
             if(containedIn(suspComb, passCase)){
-                List<Integer> complementaryComb = getComplementaryComb(suspComb, passCase);
+                Comb complementaryComb = getComplementaryComb(suspComb, passCase);
                 double rhoC = rhoC(complementaryComb, pi);
                 rhoE = Math.min(rhoE, rhoC);
             }
@@ -238,30 +229,40 @@ public class SP {
         return rhoE;
     }
 
-    private List<Integer> getComplementaryComb(List<Integer> suspComb, List<Integer> testCase) {
-        List<Integer> res = new ArrayList<>();
+    /**
+     * (1, 2, 3, 4) is testCase and (-, 2, 3, -) is suspComb
+     * so this function would return (1, -, -, 4)
+     * @param suspComb
+     * @param testCase
+     * @return
+     */
+    private Comb getComplementaryComb(Comb suspComb, TestCase testCase) {
+        assert containedIn(suspComb, testCase);
+
         int size = suspComb.size();
+        Comb res = new Comb(size);
 
         for (int i = 0; i < size; i++) {
+            // suspComb[i] != DUMMY_VALUE
             if(!suspComb.get(i).equals(DUMMY_VALUE)){
-                res.add(DUMMY_VALUE);
+                res.set(i, DUMMY_VALUE);
             }else {
-                res.add(testCase.get(i));
+                res.set(i, testCase.get(i));
             }
         }
         return res;
     }
 
-    private double rho(int componentIndex, Integer value, Set<List<Integer>> pi){
+    private double rho(int componentIndex, Integer value, Set<Comb> pi){
         int failContainComponentCount = 0;
         int passContainComponentCount = 0;
         int containComponentCount = 0;
-        for (List<Integer> failCase : tfail) {
+        for (TestCase failCase : tfail) {
             if(failCase.get(componentIndex).equals(value)){
                 failContainComponentCount++;
             }
         }
-        for (List<Integer> passCase : tpass) {
+        for (TestCase passCase : tpass) {
             if(passCase.get(componentIndex).equals(value)){
                 passContainComponentCount++;
             }
@@ -269,7 +270,7 @@ public class SP {
         containComponentCount = failContainComponentCount + passContainComponentCount;
 
         int piContainComponentCount = 0;
-        for (List<Integer> suspComb : pi) {
+        for (Comb suspComb : pi) {
             if(suspComb.get(componentIndex).equals(value)){
                 piContainComponentCount++;
             }
@@ -282,7 +283,7 @@ public class SP {
         return (1d/3d) * (u+v+w);
     }
 
-    private double rhoC(List<Integer> comb, Set<List<Integer>> pi){
+    private double rhoC(Comb comb, Set<Comb> pi){
         double rhoCOfComb = 0;
         for (int i = 0; i < comb.size(); i++) {
             if(comb.get(i) != DUMMY_VALUE){
@@ -298,16 +299,16 @@ public class SP {
     }
 
 
-    public List<List<Integer>> genNewTestCases(List<List<Integer>> piRanked) {
-        List<List<Integer>> res = new ArrayList<>();
-        for (List<Integer> suspComb : piRanked) {
-            List<Integer> tempComb = new ArrayList<>(suspComb);
+    public List<TestCase> genNewTestCases(List<Comb> piRanked) {
+        List<TestCase> res = new ArrayList<>();
+        for (Comb suspComb : piRanked) {
+            Comb tempComb = suspComb.clone();
             for (int i = 0; i < suspComb.size(); i++) {
                 if(suspComb.get(i) == DUMMY_VALUE){
                     tempComb.set(i, valueOfMinRho(i));
                 }
             }
-            res.add(tempComb);
+            res.add(new TestCase(tempComb));
         }
         return res;
     }

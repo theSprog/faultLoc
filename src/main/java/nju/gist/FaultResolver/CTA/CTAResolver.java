@@ -1,5 +1,7 @@
 package nju.gist.FaultResolver.CTA;
 
+import nju.gist.Common.MinFault;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AbstractFaultResolver;
 
 import java.util.List;
@@ -12,7 +14,7 @@ public class CTAResolver extends AbstractFaultResolver {
     }
 
     @Override
-    public List<List<Integer>> findMinFaults() {
+    public List<MinFault> findMinFaults() {
         String tree = null;
         try {
             tree = cta.constructClassifier();

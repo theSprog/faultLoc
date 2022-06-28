@@ -1,20 +1,22 @@
 package nju.gist.FaultResolver.FIC;
 
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
+import nju.gist.FaultResolver.PendingSchemas.SchemasUtil;
 import nju.gist.Tester.Checker;
 import nju.gist.Tester.Productor;
 import java.util.List;
 
 public class FICBS {
     private final Checker checker;
-    private final List<Integer> faultCase;
+    private final TestCase faultCase;
     private final Integer size;
 
     private Schema Clow;
     private Schema Chigh;
     private Schema Ccand;
 
-    public FICBS(Checker checker, List<Integer> faultCase) {
+    public FICBS(Checker checker, TestCase faultCase) {
         this.checker = checker;
         this.faultCase = faultCase;
         this.size = faultCase.size();
@@ -38,7 +40,7 @@ public class FICBS {
             return null;
         }
 
-        Schema tempNode = (Schema) node.clone();
+        Schema tempNode = node.clone();
         // faultPattern 已经发现的故障因子
         Schema faultPattern = new Schema(size);
         // U 已经排除的安全因子
@@ -56,14 +58,14 @@ public class FICBS {
     }
 
     private Schema extractOneFactor(Schema node, Schema U, Schema factor) {
-        Ccand = (Schema) node.clone();
+        Ccand =  node.clone();
         deduct(Ccand, U);
         deduct(Ccand, factor);
 
         while (Ccand.cardinality() > 1){
             partition(Ccand);
 
-            Schema temp = (Schema) node.clone();
+            Schema temp = node.clone();
             deduct(temp, union(Clow, U));
 
             boolean pass = checker.executeTestCase(Productor.genTestCase(temp, faultCase));
@@ -114,8 +116,6 @@ public class FICBS {
     }
 
     private Schema union(Schema a, Schema b){
-        Schema res = (Schema) a.clone();
-        res.or(b);
-        return res;
+        return SchemasUtil.getOr(a, b);
     }
 }

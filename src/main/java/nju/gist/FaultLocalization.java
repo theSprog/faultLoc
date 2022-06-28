@@ -1,21 +1,22 @@
 package nju.gist;
 
-import nju.gist.Common.Schema;
+import nju.gist.Common.MinFault;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.FaultResolver;
 import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
 import nju.gist.FileResolver.CSVResolver;
 import nju.gist.Tester.Checker;
 
+import java.math.BigInteger;
 import java.util.List;
-import java.util.Set;
 
 
 public class FaultLocalization {
     private static final String TEST_SET_SUFFIX = ".csv";
     private static final String FAULT_SUFFIX = ".fault";
     private final FaultResolver faultResolver;
-    private final List<List<Integer>> Tfail;
-    private final List<List<Integer>> Tpass;
+    private final List<TestCase> Tfail;
+    private final List<TestCase> Tpass;
 
     public FaultLocalization(String path, FaultResolver faultResolver) {
         this.faultResolver = faultResolver;
@@ -30,11 +31,11 @@ public class FaultLocalization {
     }
 
     public void localization() {
-        for (List<Integer> faultCase : Tfail) {
+        for (TestCase faultCase : Tfail) {
             faultResolver.setFaultCase(faultCase);
 
             long startMil = System.currentTimeMillis();
-            List<List<Integer>> minFaults = faultResolver.findMinFaults();
+            List<MinFault> minFaults = faultResolver.findMinFaults();
             long endMil = System.currentTimeMillis();
 
             System.out.println(faultCase + " fails, and the minFaults might be:");
@@ -51,18 +52,21 @@ public class FaultLocalization {
             throw new IllegalCallerException("Only PendingSchemasResolver has method getPendingSchemas");
         }
 
-        for (List<Integer> faultCase : Tfail) {
+        for (TestCase faultCase : Tfail) {
             faultResolver.setFaultCase(faultCase);
 
             long startMil = System.currentTimeMillis();
-            long pendingSchemasSize = ((PendingSchemasResolver) faultResolver).getPendingSchemasSize();
+//            long pendingSchemasSize = ((PendingSchemasResolver) faultResolver).getPendingSchemasSize();
 //            Set<Schema> pendingSchemas = ((PendingSchemasResolver) faultResolver).getPendingSchemas();
+            BigInteger res = ((PendingSchemasResolver) faultResolver).getPendingSchemasSizeAdv();
             long endMil = System.currentTimeMillis();
 
-            System.out.println(faultCase + " fails, \n" +
-                    "the pendingSchemas size is:" + pendingSchemasSize);
 //            System.out.println(faultCase + " fails, \n" +
-//                    "the pendingSchemas size is:" + pendingSchemas.size());
+//                    "the pendingSchemas size is: " + pendingSchemasSize);
+//            System.out.println(faultCase + " fails, \n" +
+//                    "the pendingSchemas size is: " + pendingSchemas.size());
+            System.out.println(faultCase + " fails, \n" +
+                    "the pendingSchemas size is: " + res);
 
             System.out.println("ExecutionTime: " + (endMil - startMil) + "ms");
             System.out.println();
@@ -70,9 +74,8 @@ public class FaultLocalization {
     }
 
     public void localizationByCA() {
-        faultResolver.initFromCA(Tfail, Tpass);
         long startMil = System.currentTimeMillis();
-        List<List<Integer>> minFaults = faultResolver.findMinFaults();
+        List<MinFault> minFaults = faultResolver.findMinFaults();
         long endMil = System.currentTimeMillis();
 
         System.out.println("the minFaults might be:");

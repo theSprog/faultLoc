@@ -1,7 +1,8 @@
 package nju.gist.FaultResolver.PendingSchemas;
 
+import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
-import nju.gist.FaultResolver.AIFL.AIFL;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AbstractFaultResolver;
 import nju.gist.FaultResolver.CMS.CMS;
 import nju.gist.FaultResolver.FIC.FIC;
@@ -13,7 +14,9 @@ import nju.gist.FaultResolver.PendingSchemas.PendingSchemasRange.SchemasPath;
 import nju.gist.FaultResolver.PendingSchemas.adaptAlgo.*;
 import nju.gist.FaultResolver.RI.RI;
 import nju.gist.Tester.Productor;
+import org.raistlic.common.permutation.Combination;
 
+import java.math.BigInteger;
 import java.util.*;
 
 import static nju.gist.FaultResolver.PendingSchemas.SchemasUtil.*;
@@ -40,7 +43,7 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
 
 
     @Override
-    public void setFaultCase(List<Integer> faultCase) {
+    public void setFaultCase(TestCase faultCase) {
         super.setFaultCase(faultCase);
         if (PSS != null) {    // 说明都还没有初始化
             PSS.clear();
@@ -98,19 +101,19 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
      * @return true if healthSchemas or faultSchemas changed, false otherwise
      * <p>
      * 对 pendingSchemas 做出不同策略的处理
-     * 若这其中改变了 healthSchemas 或 faultSchemas, 则重新计算 lowBound 和 upBound
+     * If the healthSchemas or faultSchemas are changed, the lowBound and upBound are recalculated.
      */
     private boolean processPendingSchemas(Schema low, Schema up) {
         SchemasPath SchemasPath = new SchemasPath(low, up);
 
-        // 为策略提供上下文
-        Context context = new Context(SchemasPath, healthSchemas, faultSchemas, knownMinFaults, faultCase);
+        // Providing Context to strategy
+        Context context = new Context(SchemasPath, healthSchemas, faultSchemas, knownMinFaults, faultCase, checker);
 
         IStrategy strategy;
 
         // 用某种策略处理 pending,
         // TODO - 此处使用策略模式, 意味着策略可修改
-        StrategyKind strategyKind = StrategyKind.FICStrategy;
+        StrategyKind strategyKind = StrategyKind.CMSStrategy;
 
         switch (strategyKind) {
             case FICStrategy:
@@ -137,6 +140,7 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
         context.setStrategy(strategy);
         ExecutionResult exeResult = context.execute();
 
+        // the lowBound and upBound are recalculated
         if (exeResult.healthSchemasChanged()) {
             updateLowBound();
         }
@@ -171,7 +175,7 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
         while (diffIndex != -1) {
             int curLen = list.size();
             for (int i = 0; i < curLen; i++) {
-                Schema temp = (Schema) list.get(i).clone();
+                Schema temp = list.get(i).clone();
                 temp.set(diffIndex);
                 list.add(temp);
             }
@@ -181,6 +185,10 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
         return list;
     }
 
+    /**
+     *toy version for count PendingSchemasSize, please use getPendingSchemasSizeAdv instead
+     * @return
+     */
     public long getPendingSchemasSize() {
         long pendingSchemasSize = 1L << size;
         long faultSchemasSize = 0;
@@ -189,8 +197,8 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
         processFaultCase();
 
         for (Schema faultSchema : faultSchemas) {
-            SchemasPath faultSchemasPath = new SchemasPath(faultSchema, faultCasePattern);
-            faultSchemasSize += getSchemasSize(faultSchemasPath, FaultSchemasPathGroup);
+            SchemasPath faultSchemaPath = new SchemasPath(faultSchema, faultCasePattern);
+            faultSchemasSize += getSchemasSize(faultSchemaPath, FaultSchemasPathGroup);
         }
 
         for (Schema healthSchema : healthSchemas) {
@@ -199,6 +207,90 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
         }
 
         return pendingSchemasSize - healthSchemasSize - faultSchemasSize;
+    }
+
+    /**
+     *Advanced version of getPendingSchemasSize
+     * @return the size of Pending Schemas, it might be a large number, so we wrap it by BigInteger
+     */
+    public BigInteger getPendingSchemasSizeAdv() {
+        BigInteger pendingSchemasSize = BigInteger.ONE.shiftLeft(size);
+
+        processFaultCase();
+
+        boolean ComputeFaultSchemas = true;
+        BigInteger faultSchemasSize = getSchemasSizeByBound(ComputeFaultSchemas);
+        BigInteger healthSchemasSize = getSchemasSizeByBound(!ComputeFaultSchemas);
+
+        return pendingSchemasSize.subtract(healthSchemasSize).subtract(faultSchemasSize);
+    }
+
+    /**
+     * formula
+     * |A1 U A2 U A3 ... U Am| = ∑|Ai| - ∑| Ai /\ Aj | + ∑ | Ai /\ Aj /\ Ak | - ... (-1)^m ∑ |A1 /\ A2 /\ A3 ... /\ Am|
+     * We consider each SchemasPath P as a set Ai, Ai = {x | P.low() \preceq x \preceq P.up()}
+     * @param ComputeFaultSchemas, Since faultSchemas and healthSchemas call different processing ways,
+     *                             a variable "ComputeFaultSchemas" is used to make the distinction
+     * @return
+     */
+    private BigInteger getSchemasSizeByBound(boolean ComputeFaultSchemas) {
+        BigInteger resSize = BigInteger.ZERO;
+
+        List<SchemasPath> SchemasPaths = new ArrayList<>();
+        // positive is the signs of numbers,
+        // positive == true => sign is "+", "-" otherwise
+        boolean positive = true;
+
+        if(ComputeFaultSchemas){
+            for (Schema faultSchema : faultSchemas) {
+                SchemasPath faultSchemaPath = new SchemasPath(faultSchema, faultCasePattern);
+                SchemasPaths.add(faultSchemaPath);
+            }
+        }else {
+            for (Schema healthSchema : healthSchemas) {
+                SchemasPath healthSchemaPath = new SchemasPath(healthCasePattern, healthSchema);
+                SchemasPaths.add(healthSchemaPath);
+            }
+        }
+
+        // derive ∑ | A1 /\ A2 /\ ... /\ Ai|, this is Combination of paths in SchemasPaths
+        for (int i = 1; i <= SchemasPaths.size(); i++) {
+            Combination<SchemasPath> pathCombination = Combination.of(SchemasPaths, i);
+            // tempSize denote result number of each ∑
+            BigInteger tempSize = BigInteger.ZERO;
+            for (List<SchemasPath> schemasPathList : pathCombination) {
+                if(ComputeFaultSchemas) {
+                    Schema faultLower = healthCasePattern.clone();
+                    for (SchemasPath schemasPath : schemasPathList) {
+                        faultLower.or(schemasPath.getLow());
+                    }
+                    tempSize = tempSize.add(getSchemaSizeByPath(new SchemasPath(faultLower, faultCasePattern)));
+                }else {
+                    Schema healthUpper = faultCasePattern.clone();
+                    for (SchemasPath schemasPath : schemasPathList) {
+                        healthUpper.and(schemasPath.getUp());
+                    }
+                    tempSize = tempSize.add(getSchemaSizeByPath(new SchemasPath(healthCasePattern, healthUpper)));
+                }
+            }
+
+            // if positive = false, we should subtract tempSize
+            if(!positive) {
+                resSize = resSize.subtract(tempSize);
+            }else {
+                resSize = resSize.add(tempSize);
+            }
+
+            positive = !positive;
+        }
+        return resSize;
+    }
+
+    private BigInteger getSchemaSizeByPath(SchemasPath path) {
+        Schema low = path.getLow();
+        Schema up = path.getUp();
+        Schema diffs = getDiffs(low, up);
+        return BigInteger.ONE.shiftLeft(diffs.cardinality());
     }
 
     private long getSchemasSize(SchemasPath schemasPath, List<SchemasPath> schemasPathGroup) {
@@ -243,7 +335,7 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
             return PSS;
         }
 
-        // 若确实是第一次调用本函数
+        // If this is indeed the first time this function is called
         processFaultCase();
         for (Schema low : lowBound) {
             for (Schema up : upBound) {
@@ -257,9 +349,9 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
     }
 
     @Override
-    public List<List<Integer>> findMinFaults() {
-        // 重复调用只会返回第一次一次结果
-        // minFaults 的清空只会在更换 faultCase 时
+    public List<MinFault> findMinFaults() {
+        // Repeated calls will only return the first-call result
+        // minFaults will only be cleared when the faultCase is replaced
         if (!minFaults.isEmpty()) {
             return minFaults;
         }

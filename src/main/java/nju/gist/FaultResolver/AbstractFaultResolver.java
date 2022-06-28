@@ -1,16 +1,18 @@
 package nju.gist.FaultResolver;
 
+import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.Tester.Checker;
 import nju.gist.Tester.Productor;
 
 import java.util.*;
 
 public abstract class AbstractFaultResolver implements FaultResolver{
-    protected List<List<Integer>> Tfail;
-    protected List<List<Integer>> Tpass;
+    protected List<TestCase> Tfail;
+    protected List<TestCase> Tpass;
 
-    protected List<Integer> faultCase;
+    protected TestCase faultCase;
     protected Checker checker;
 
     // all 1
@@ -26,20 +28,17 @@ public abstract class AbstractFaultResolver implements FaultResolver{
     protected Set<Schema> knownMinFaults;
 
     // the real MFS of faultCase, such as {2,0,0,3} or {3,3,0,0} where 0 denotes -
-    protected List<List<Integer>> minFaults;
-
-    // 每个参数能取的值的集合
-    // i.e. Values[0] = {2, 3} 代表第 0 个参数能取 3 和 2.
-    protected List<Set<Integer>> Values;
+    protected List<MinFault> minFaults;
 
     @Override
-    public void setTfailAndTpass(List<List<Integer>> Tfail, List<List<Integer>> Tpass) {
+    public void setTfailAndTpass(List<TestCase> Tfail, List<TestCase> Tpass) {
         this.Tfail = Tfail;
         this.Tpass = Tpass;
+        Productor.SetParaValues(initFromCA(Tfail, Tpass));
     }
 
     @Override
-    public void setFaultCase(List<Integer> faultCase) {
+    public void setFaultCase(TestCase faultCase) {
         this.faultCase = faultCase;
         this.size = faultCase.size();
         this.checker.clearHtc();
@@ -61,33 +60,31 @@ public abstract class AbstractFaultResolver implements FaultResolver{
             this.minFaults = new LinkedList<>();
             this.knownMinFaults = new HashSet<>();
         }
-
-        Productor.setFaultCaseSize(size);
     }
 
     @Override
-    public void initFromCA(List<List<Integer>> faultCaseList, List<List<Integer>> healthCaseList) {
+    public List<Set<Integer>> initFromCA(List<TestCase> faultCaseList, List<TestCase> healthCaseList) {
         if(!faultCaseList.isEmpty()) setFaultCase(faultCaseList.get(0));
         else {setFaultCase(healthCaseList.get(0));}
 
-        Values = new ArrayList<>();
+        List<Set<Integer>> Values = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             Values.add(new HashSet<>());
         }
 
-        for (List<Integer> testCase : faultCaseList) {
+        for (TestCase testCase : faultCaseList) {
             for (int i = 0; i < testCase.size(); i++) {
                 Values.get(i).add(testCase.get(i));
             }
         }
 
-        for (List<Integer> testCase : healthCaseList) {
+        for (TestCase testCase : healthCaseList) {
             for (int i = 0; i < testCase.size(); i++) {
                 Values.get(i).add(testCase.get(i));
             }
         }
 
-
+        return Values;
     }
 
     @Override

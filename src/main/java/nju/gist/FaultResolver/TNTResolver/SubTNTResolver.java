@@ -1,6 +1,8 @@
 package nju.gist.FaultResolver.TNTResolver;
 
+import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.FIC.FIC;
 import nju.gist.Tester.Productor;
 
@@ -18,14 +20,14 @@ public class SubTNTResolver extends AbstractFaultTNTResolver {
     }
 
     @Override
-    public void setFaultCase(List<Integer> faultCase) {
+    public void setFaultCase(TestCase faultCase) {
         super.setFaultCase(faultCase);
         HuntingGround = new HashSet<>();
         fic = new FIC(checker, faultCase);
     }
 
     @Override
-    public List<List<Integer>> findMinFaults() {
+    public List<MinFault> findMinFaults() {
         for (int node = maxNode; node > 0; node--) {
             boolean health = checkNode(node);
             if (!health) {
@@ -37,7 +39,7 @@ public class SubTNTResolver extends AbstractFaultTNTResolver {
         }
 
         for (Schema winner : HuntingGround) {
-            List<Integer> minFault = Productor.genMinFault(winner, faultCase);
+            MinFault minFault = Productor.genMinFault(winner, faultCase);
             minFaults.add(minFault);
         }
 

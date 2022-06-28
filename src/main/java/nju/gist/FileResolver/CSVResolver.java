@@ -1,5 +1,6 @@
 package nju.gist.FileResolver;
 
+import nju.gist.Common.TestCase;
 import nju.gist.Tester.Checker;
 
 import java.io.*;
@@ -8,14 +9,14 @@ import java.util.*;
 public class CSVResolver extends AbstractFileResolver{
     private static final String SEPARATOR = ",";
 
-    private final List<List<Integer>> HealthCaseList;
-    private final List<List<Integer>> FaultCaseList;
+    private final List<TestCase> HealthCaseList;
+    private final List<TestCase> FaultCaseList;
     private final Checker checker;
 
     public CSVResolver(String filePath, Checker checker){
         this.checker = checker;
-        HealthCaseList = new LinkedList<>();
-        FaultCaseList = new LinkedList<>();
+        HealthCaseList = new ArrayList<>();
+        FaultCaseList = new ArrayList<>();
         parseCSV(filePath);
     }
 
@@ -30,16 +31,16 @@ public class CSVResolver extends AbstractFileResolver{
 
                 String[] confs = line.split(SEPARATOR);
 
-                List<Integer> testCase = new ArrayList<>();
+                TestCase tc = new TestCase();
                 for (String conf : confs) {
-                    testCase.add(Integer.parseInt(conf.strip()));
+                    tc.add(Integer.parseInt(conf.strip()));
                 }
 
-                boolean pass = checker.executeTestCase(testCase);
+                boolean pass = checker.executeTestCase(tc);
                 if(!pass){
-                    FaultCaseList.add(testCase);
+                    FaultCaseList.add(tc);
                 }else {
-                    HealthCaseList.add(testCase);
+                    HealthCaseList.add(tc);
                 }
             }
         }catch (IOException io){
@@ -48,12 +49,12 @@ public class CSVResolver extends AbstractFileResolver{
     }
 
     @Override
-    public List<List<Integer>> getFaultCaseList(){
+    public List<TestCase> getFaultCaseList(){
         return FaultCaseList;
     }
 
     @Override
-    public List<List<Integer>> getHealthCaseList() {
+    public List<TestCase> getHealthCaseList() {
         return HealthCaseList;
     }
 }

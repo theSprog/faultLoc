@@ -1,6 +1,8 @@
 package nju.gist.FaultResolver.LG;
 
+import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AbstractFaultResolver;
 import nju.gist.Tester.Productor;
 
@@ -15,7 +17,7 @@ public class LGResolver extends AbstractFaultResolver {
     }
 
     @Override
-    public List<List<Integer>> findMinFaults() {
+    public List<MinFault> findMinFaults() {
         lg = lgKind == LGKind.SafeValueLG ?
                 new SafeValueLG(checker, knownMinFaults) :
                 new AdvLG(checker, knownMinFaults);

@@ -1,22 +1,26 @@
 package nju.gist.Tester;
 
-import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.FileResolver.FaultFileResolver;
 
 import java.util.*;
 
 public class Checker {
     private final List<HashMap<Integer, Integer>> faultMaps;
-    // health test case
-    private final Set<List<Integer>> htc;
+
+    // executed test case set
+    private final Set<TestCase> execSet;
+    // health test case(htc)
+    private final Set<TestCase> htc;
 
     public Checker(String faultFilePath) {
         FaultFileResolver faultResolver = new FaultFileResolver();
         faultMaps = faultResolver.getFaultFeatures(faultFilePath);
         htc = new HashSet<>();
+        execSet = new HashSet<>();
     }
 
-    public Set<List<Integer>> getHtc() {
+    public Set<TestCase> getHtc() {
         return htc;
     }
 
@@ -27,7 +31,8 @@ public class Checker {
     /**
      * @return true if this testCase pass the execution, false otherwise
      */
-    public boolean executeTestCase(List<Integer> testCase) {
+    public boolean executeTestCase(TestCase testCase) {
+        execSet.add(testCase);
         for (HashMap<Integer, Integer> faultMap : faultMaps) {
             if (triggerFail(testCase, faultMap)) {
                 return false;

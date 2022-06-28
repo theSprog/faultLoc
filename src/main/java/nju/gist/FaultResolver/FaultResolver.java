@@ -1,14 +1,16 @@
 package nju.gist.FaultResolver;
 
+import nju.gist.Common.MinFault;
+import nju.gist.Common.TestCase;
 import nju.gist.Tester.Checker;
 
-import java.util.BitSet;
 import java.util.List;
+import java.util.Set;
 
 public interface FaultResolver {
-    void setTfailAndTpass(List<List<Integer>> faultCaseList, List<List<Integer>> healthCaseList);
-    void setFaultCase(List<Integer> faultCase);
+    void setTfailAndTpass(List<TestCase> faultCaseList, List<TestCase> healthCaseList);
+    void setFaultCase(TestCase faultCase);
     void setChecker(Checker checker);
-    void initFromCA(List<List<Integer>> faultCaseList, List<List<Integer>> healthCaseList);
-    List<List<Integer>> findMinFaults();
+    List<Set<Integer>> initFromCA(List<TestCase> faultCaseList, List<TestCase> healthCaseList);
+    List<MinFault> findMinFaults();
 }

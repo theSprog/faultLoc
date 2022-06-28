@@ -1,6 +1,7 @@
 package nju.gist.FaultResolver.LG;
 
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.PendingSchemas.SchemasUtil;
 import nju.gist.Tester.Checker;
 import nju.gist.Tester.Productor;
@@ -22,13 +23,13 @@ public class SafeValueLG extends LG{
     }
 
     @Override
-    public void locate(List<Integer> testCase) {
+    public void locate(TestCase testCase) {
         Schema faultPattern = new Schema(testCase.size());
         faultPattern.set(0, testCase.size());
         locateError(faultPattern, testCase);
     }
 
-    private void locateError(Schema faultPattern, List<Integer> testCase) {
+    private void locateError(Schema faultPattern, TestCase testCase) {
         if(faultPattern.cardinality() == 1) {
             boolean pass = checker.executeTestCase(Productor.genTestCase(faultPattern, testCase));
             if(!pass){
@@ -54,7 +55,7 @@ public class SafeValueLG extends LG{
         }
     }
 
-    private void acrossLocate(Schema leftPattern, Schema rightPattern, List<Integer> testCase) {
+    private void acrossLocate(Schema leftPattern, Schema rightPattern, TestCase testCase) {
         int c1 = leftPattern.cardinality();
         int c2 = rightPattern.cardinality();
 

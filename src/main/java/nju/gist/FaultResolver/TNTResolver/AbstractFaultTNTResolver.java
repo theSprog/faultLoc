@@ -1,5 +1,7 @@
 package nju.gist.FaultResolver.TNTResolver;
 
+import nju.gist.Common.MinFault;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AbstractFaultResolver;
 import nju.gist.Tester.Productor;
 
@@ -16,13 +18,13 @@ public abstract class AbstractFaultTNTResolver extends AbstractFaultResolver {
     protected Integer maxNode;
 
     @Override
-    public void setFaultCase(List<Integer> faultCase) {
+    public void setFaultCase(TestCase faultCase) {
         super.setFaultCase(faultCase);
         this.maxNode = (1 << size) - 1;
     }
 
     protected boolean checkNode(int node) {
-        List<Integer> testCase = Productor.genTestCase(node, faultCase);
+        TestCase testCase = Productor.genTestCase(node, faultCase);
         return checker.executeTestCase(testCase);
     }
 
@@ -80,5 +82,5 @@ public abstract class AbstractFaultTNTResolver extends AbstractFaultResolver {
         // pass, 这是一个废案
     }
 
-    public abstract List<List<Integer>> findMinFaults();
+    public abstract List<MinFault> findMinFaults();
 }

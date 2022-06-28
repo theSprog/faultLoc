@@ -1,6 +1,8 @@
 package nju.gist.FaultResolver.InverseCTD;
 
+import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AbstractFaultResolver;
 import nju.gist.Tester.Productor;
 
@@ -11,16 +13,17 @@ public class InverseCTDResolver extends AbstractFaultResolver {
     private InverseCTD inverseCTD;
 
     @Override
-    public List<List<Integer>> findMinFaults() {
-        inverseCTD = new InverseCTD(faultCase, Tfail, Tpass);
-        inverseCTD.createModel();
+    public List<MinFault> findMinFaults() {
+        inverseCTD = new InverseCTD(Productor.ParaValues, Tfail, Tpass);
         Schema resPattern = new Schema(faultCase.size());
 
         for (int i = 0; i < faultCase.size(); i++) {
-            Set<List<Integer>> modifiedTestCases = inverseCTD.getModifiedTestCases(faultCase, i);
-            for (List<Integer> modifiedTestCase : modifiedTestCases) {
+            Set<TestCase> modifiedTestCases = inverseCTD.getModifiedTestCases(faultCase, i);
+            for (TestCase modifiedTestCase : modifiedTestCases) {
                 boolean pass = checker.executeTestCase(modifiedTestCase);
                 if(pass){
+                    // we modified i-th parameter and the fault disappear,
+                    // so we capture it as part of fault
                     resPattern.set(i);
                     break;
                 }

@@ -1,18 +1,22 @@
 package nju.gist.FaultResolver.AIFL;
 
+import nju.gist.Common.Comb;
+import nju.gist.Common.MinFault;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AbstractFaultResolver;
+import nju.gist.Tester.Productor;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class AIFLResolver extends AbstractFaultResolver {
-    private Set<List<Integer>> TpassSet;
-    private Set<List<Integer>> TfailSet;
+    private Set<TestCase> TpassSet;
+    private Set<TestCase> TfailSet;
 
     @Override
-    public List<List<Integer>> findMinFaults() {
-        AIFL aifl = new AIFL(checker, faultCase, Values);
+    public List<MinFault> findMinFaults() {
+        AIFL aifl = new AIFL(checker, faultCase, Productor.ParaValues);
         aifl.setTfailAndTpass(Tfail, Tpass);
         aifl.setThreshold(faultCase.size());
 
@@ -20,20 +24,22 @@ public class AIFLResolver extends AbstractFaultResolver {
         TfailSet = aifl.getTfail();
 
         int n = aifl.getFaultCaseSize();
-        Set<List<Integer>> suspSetOld = new HashSet<>();
+        Set<Comb> suspSetOld = new HashSet<>();
 
         // suspSet^(0) = SchemaSet(TfailSet) - SchemaSet(TpassSet)
-        Set<List<Integer>> suspSetNew = aifl.minus(aifl.getSchemaSet(TfailSet), aifl.getSchemaSet(TpassSet));
+        Set<Comb> suspSetNew = aifl.minus(aifl.getCombinationSet(TfailSet), aifl.getCombinationSet(TpassSet));
 
         for (int i = 0; i < n; i++) {
             if(suspSetNew.size() <= aifl.getThreshold() || suspSetOld.equals(suspSetNew)) break;
 
-            Set<List<Integer>> ATpass = aifl.getATpass(aifl.generateAT(i+1, TfailSet));
+            Set<TestCase> ATpass = aifl.getATpass(aifl.generateAT(i+1, TfailSet));
             suspSetOld = suspSetNew;
-            suspSetNew = aifl.minus(suspSetOld, aifl.getSchemaSet(ATpass));
+            suspSetNew = aifl.minus(suspSetOld, aifl.getCombinationSet(ATpass));
         }
 
-        minFaults.addAll(suspSetNew);
-        return null;
+        for (Comb combination : suspSetNew) {
+            minFaults.add(new MinFault(combination));
+        }
+        return minFaults;
     }
 }

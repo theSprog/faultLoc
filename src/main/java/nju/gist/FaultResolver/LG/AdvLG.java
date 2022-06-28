@@ -1,6 +1,8 @@
 package nju.gist.FaultResolver.LG;
 
+import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.Tester.Checker;
 import nju.gist.Tester.Productor;
 
@@ -52,7 +54,7 @@ public class AdvLG extends LG{
     }
 
     @Override
-    public void locateELA(List<List<Integer>> Tfail, List<List<Integer>> minFaults) {
+    public void locateELA(List<TestCase> Tfail, List<MinFault> minFaults) {
         try {
             assert !Tfail.isEmpty();
             caseSize = Tfail.get(0).size();
@@ -66,7 +68,7 @@ public class AdvLG extends LG{
         }
     }
 
-    private Schema tc2s(List<Integer> testCase) throws InvalidPropertiesFormatException {
+    private Schema tc2s(TestCase testCase) throws InvalidPropertiesFormatException {
         Schema res = new Schema(testCase.size());
         for (int i = 0; i < testCase.size(); i++) {
             if(testCase.get(i) == 1){   // set 1 to bool 0
@@ -80,13 +82,13 @@ public class AdvLG extends LG{
         return res;
     }
 
-    private List<Integer> s2tc(Schema schema) {
-        List<Integer> res = new ArrayList<>(schema.size());
+    private TestCase s2tc(Schema schema) {
+        TestCase res = new TestCase(schema.size());
         for (int i = 0; i < schema.size(); i++) {
             if(schema.get(i)){
-                res.add(2);
+                res.set(i, 2);
             }else {
-                res.add(1);
+                res.set(i, 1);
             }
         }
         return res;
@@ -101,11 +103,11 @@ public class AdvLG extends LG{
      * @return
      * @throws InvalidPropertiesFormatException
      */
-    private Set<Edge> locateError(List<List<Integer>> Tfail) throws InvalidPropertiesFormatException {
+    private Set<Edge> locateError(List<TestCase> Tfail) throws InvalidPropertiesFormatException {
         Set<Edge> resE = new HashSet<>();
 
         Set<Integer> A = new HashSet<>();
-        for (List<Integer> fail : Tfail) {
+        for (TestCase fail : Tfail) {
             Schema faultPattern = tc2s(fail);
             A.addAll(SearchEndPoint(faultPattern));
         }
@@ -114,7 +116,7 @@ public class AdvLG extends LG{
         resE.addAll(Ep);    // 1−0 inside Ap done
 
         Schema fault_11_inB = new Schema(caseSize);
-        fault_11_inB.set(0, caseSize);
+        fault_11_inB.set(0, caseSize);  // set all 1 in [0, caseSize)
         for (Integer a : A) {
             fault_11_inB.clear(a);
         }// 1-1 inside B

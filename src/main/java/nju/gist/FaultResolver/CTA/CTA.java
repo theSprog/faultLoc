@@ -1,5 +1,6 @@
 package nju.gist.FaultResolver.CTA;
 
+import nju.gist.Common.MinFault;
 import nju.gist.FaultResolver.AbstractFaultResolver;
 import weka.classifiers.trees.J48;
 import weka.core.Attribute;
@@ -54,11 +55,11 @@ public class CTA {
         return depth;
     }
 
-    public List<List<Integer>> parseTree(String tree) {
+    public List<MinFault> parseTree(String tree) {
         if(tree == null)
             throw new NullPointerException("parseTree got a null pointer !");
 
-        ArrayList<List<Integer>> res = new ArrayList<>();
+        List<MinFault> res = new ArrayList<>();
         int[] fault = new int[data.numAttributes()-1];
         String[] strs = tree.split("\n");
         for (String line : strs) {
@@ -69,7 +70,7 @@ public class CTA {
                         int faultFactor = Integer.parseInt(line.split(":")[0].split("=")[1].strip());
                         inject(fault, depth, faultFactor);
                         List<Integer> faultList = Arrays.stream(fault).boxed().collect(Collectors.toList());
-                        res.add(faultList);
+                        res.add(new MinFault(faultList));
                     }
 
                 }else { // not leaf

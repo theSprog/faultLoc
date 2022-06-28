@@ -1,5 +1,7 @@
 package nju.gist.FaultResolver.TNTResolver;
 
+import nju.gist.Common.MinFault;
+import nju.gist.Common.TestCase;
 import nju.gist.Tester.Productor;
 
 import java.util.HashSet;
@@ -10,7 +12,7 @@ public class AdderTNTResolver extends AbstractFaultTNTResolver {
     private Set<Integer> minFaultNodes;
 
     @Override
-    public List<List<Integer>> findMinFaults() {
+    public List<MinFault> findMinFaults() {
         this.minFaultNodes = new HashSet<>();
 
         for (int node = 1; node <= maxNode; node++) {
@@ -19,7 +21,7 @@ public class AdderTNTResolver extends AbstractFaultTNTResolver {
                 if(isMinFault(node)){
                     minFaultNodes.add(node);
 
-                    List<Integer> minFault = Productor.genMinFault(node, faultCase);
+                    MinFault minFault = Productor.genMinFault(node, faultCase);
                     minFaults.add(minFault);
                 }
 

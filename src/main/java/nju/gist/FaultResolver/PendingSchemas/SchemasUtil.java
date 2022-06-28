@@ -1,11 +1,9 @@
 package nju.gist.FaultResolver.PendingSchemas;
 
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiPredicate;
 
 public class SchemasUtil {
@@ -31,7 +29,7 @@ public class SchemasUtil {
             throw new RuntimeException("are you kidding me, low isn't sub-schemas of up");
         }
 
-        Schema diffs = (Schema) low.clone();
+        Schema diffs = low.clone();
         diffs.xor(up);
         return diffs;
     }
@@ -129,10 +127,18 @@ public class SchemasUtil {
         return upBound;
     }
 
+    /**
+     * remove Schema if biPredicate(A, B) is true, A、B are both in bound
+     * i.e. if biPredicate == isSubSchema, and A is subSchema of B, we remove A from bound
+     * otherwise, if biPredicate == isSuperSchema, and A is superSchema of B, we remove A from bound
+     * @param bound
+     * @param biPredicate
+     */
     public static void simplifyBound(Set<Schema> bound, BiPredicate<Schema, Schema> biPredicate) {
-        LinkedList<Schema> list = new LinkedList<>();
+        List<Schema> list = new ArrayList<>();
         for (Schema schema : bound) {
             for (int i = 0; i <= list.size(); i++) {
+                // Sentinel condition
                 if(i == list.size()){
                     list.add(schema);
                     break;
@@ -165,7 +171,7 @@ public class SchemasUtil {
      * @param faultCase
      * @return
      */
-    public static Set<Schema> tcs2Schemas(Set<List<Integer>> htc, List<Integer> faultCase) {
+    public static Set<Schema> tcs2Schemas(Set<TestCase> htc, List<Integer> faultCase) {
         Set<Schema> res = new HashSet<>();
         for (List<Integer> tc : htc) {
             Schema schema = SchemasUtil.tc2Schema(tc, faultCase);

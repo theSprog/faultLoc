@@ -1,7 +1,10 @@
 package nju.gist.FaultResolver.ComFIL;
 
+import nju.gist.Common.Comb;
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.Tester.Productor;
+import org.raistlic.common.permutation.Combination;
 
 import java.util.*;
 
@@ -11,25 +14,20 @@ public class ComFIL{
      * @param testCase
      * @return powerSet of testCase
      */
-    public Set<List<Integer>> powerSet(List<Integer> testCase) {
-        Set<List<Integer>> res = new HashSet<>();
+    public Set<Comb> powerSet(TestCase testCase) {
+        Set<Comb> res = new HashSet<>();
 
-        Schema casePattern = new Schema(testCase.size());
-        casePattern.set(0, testCase.size());
+        List<Integer> testCaseIndex = new ArrayList<>();
+        for (int i = 0; i < testCase.size(); i++) {
+            testCaseIndex.add(i);
+        }
 
-        ArrayList<Schema> list = new ArrayList<>(1 << testCase.size());
-        list.add(new Schema(testCase.size()));
+        for (int i = 1; i <= testCase.size(); i++) {
+            Combination<Integer> posIndexs = Combination.of(testCaseIndex, i);
+            for (List<Integer> pos : posIndexs) {
+                res.add(new Comb(testCase, pos));
 
-        int factorIndex = casePattern.nextSetBit(0);
-        while (factorIndex != -1) {
-            int curLen = list.size();
-            for (int i = 0; i < curLen; i++) {
-                Schema temp = (Schema) list.get(i).clone();
-                temp.set(factorIndex);
-                res.add(Productor.genSchema(temp, testCase));
-                list.add(temp);
             }
-            factorIndex = casePattern.nextSetBit(factorIndex + 1);
         }
 
         return res;
@@ -41,9 +39,9 @@ public class ComFIL{
      * @param B {[1],{2]}
      * @return  {[1,2]}
      */
-    public Set<List<Integer>> minus(Set<List<Integer>> A, Set<List<Integer>> B) {
-        Set<List<Integer>> res = new HashSet<>();
-        for (List<Integer> a : A) {
+    public Set<Comb> minus(Set<Comb> A, Set<Comb> B) {
+        Set<Comb> res = new HashSet<>();
+        for (Comb a : A) {
             if(!B.contains(a)){
                 res.add(a);
             }
@@ -61,8 +59,7 @@ public class ComFIL{
      * (1,3,0,1) is not SubInteraction (1,2,2,1)
      */
     public boolean isSubInteraction(List<Integer> cand, List<Integer> candFI) {
-        if(cand.size() != candFI.size()) return false;
-
+        assert cand.size() == candFI.size();
         for (int i = 0; i < cand.size(); i++) {
             if(!cand.get(i).equals(candFI.get(i)) ) {
                 if(cand.get(i) != 0 || candFI.get(i) == 0){
@@ -84,8 +81,7 @@ public class ComFIL{
      * (1,3,0,1) is not SuperInteraction (1,2,2,1)
      */
     public boolean isSuperInteraction(List<Integer> cand, List<Integer> candFI) {
-        if(cand.size() != candFI.size()) return false;
-
+        assert cand.size() == candFI.size();
         boolean equal = true;
         for (int i = 0; i < cand.size(); i++) {
             if(!cand.get(i).equals(candFI.get(i)) ){

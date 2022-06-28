@@ -1,6 +1,7 @@
 package nju.gist.FaultResolver.RI;
 
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.PendingSchemas.SchemasUtil;
 import nju.gist.Tester.Checker;
 import nju.gist.Tester.Productor;
@@ -9,14 +10,14 @@ import java.util.List;
 
 public class RI {
     private final Checker checker;
-    private final List<Integer> faultCase;
+    private final TestCase faultCase;
     private final Schema faultCasePattern;
     private final Integer size;
 
     private Schema S1;
     private Schema S2;
 
-    public RI(Checker checker, List<Integer> faultCase, Schema faultCasePattern) {
+    public RI(Checker checker, TestCase faultCase, Schema faultCasePattern) {
         this.checker = checker;
         this.faultCase = faultCase;
         this.faultCasePattern = faultCasePattern;

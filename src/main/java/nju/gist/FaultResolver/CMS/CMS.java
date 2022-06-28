@@ -1,6 +1,7 @@
 package nju.gist.FaultResolver.CMS;
 
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
 import nju.gist.FaultResolver.PendingSchemas.SchemasUtil;
 import nju.gist.Tester.Checker;
@@ -15,10 +16,10 @@ public class CMS {
     private Set<Schema> HSS;
 
     private final Checker checker;
-    private final List<Integer> faultCase;
+    private final TestCase faultCase;
     private PendingSchemasResolver pendingSchemasResolver;
 
-    public CMS(Checker checker, List<Integer> faultCase) {
+    public CMS(Checker checker, TestCase faultCase) {
         this.checker = checker;
         this.faultCase = faultCase;
     }

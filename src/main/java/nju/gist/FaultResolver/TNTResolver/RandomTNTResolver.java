@@ -1,5 +1,7 @@
 package nju.gist.FaultResolver.TNTResolver;
 
+import nju.gist.Common.MinFault;
+import nju.gist.Common.TestCase;
 import nju.gist.Tester.Productor;
 
 import java.util.BitSet;
@@ -9,7 +11,7 @@ import java.util.Random;
 // 加入随机过程
 public class RandomTNTResolver extends AbstractFaultTNTResolver {
     @Override
-    public void setFaultCase(List<Integer> faultCase) {
+    public void setFaultCase(TestCase faultCase) {
         super.setFaultCase(faultCase);
         super.knownTable = new BitSet(1 << size);
         knownTable.set(0);
@@ -31,7 +33,7 @@ public class RandomTNTResolver extends AbstractFaultTNTResolver {
     }
 
     @Override
-    public List<List<Integer>> findMinFaults() {
+    public List<MinFault> findMinFaults() {
         if(size > 24){
             preProcess();
         }
@@ -42,7 +44,7 @@ public class RandomTNTResolver extends AbstractFaultTNTResolver {
 
             boolean health = checkAndStamp(node);
             if(!health) {
-                List<Integer> minFault = Productor.genMinFault(node, faultCase);
+                MinFault minFault = Productor.genMinFault(node, faultCase);
                 minFaults.add(minFault);
             }
         }

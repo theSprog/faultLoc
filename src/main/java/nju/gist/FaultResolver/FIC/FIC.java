@@ -1,23 +1,20 @@
 package nju.gist.FaultResolver.FIC;
 
 import nju.gist.Common.Schema;
+import nju.gist.Common.TestCase;
 import nju.gist.Tester.Checker;
 import nju.gist.Tester.Productor;
 import java.util.List;
 
 public class FIC {
     private final Checker checker;
-    private final List<Integer> faultCase;
+    private final TestCase faultCase;
     private final Integer size;
 
-    public FIC(Checker checker, List<Integer> faultCase) {
+    public FIC(Checker checker, TestCase faultCase) {
         this.checker = checker;
         this.faultCase = faultCase;
         this.size = faultCase.size();
-    }
-
-    public Checker getChecker() {
-        return checker;
     }
 
     public void removeFaultPattern(Schema node, Schema faultPattern){
@@ -41,7 +38,7 @@ public class FIC {
         for (int i = 0; i < size; i++) {
             if (faultPattern.get(i)) {
                 faultPattern.clear(i);
-                List<Integer> testCase = Productor.genTestCase(faultPattern, faultCase);
+                TestCase testCase = Productor.genTestCase(faultPattern, faultCase);
                 pass = checker.executeTestCase(testCase);
 
                 if (pass) {   // 破坏了 fault, 说明 i 是组成故障之一

@@ -1,5 +1,6 @@
 package nju.gist;
 
+import nju.gist.FaultResolver.AIFL.AIFLResolver;
 import nju.gist.FaultResolver.CTA.CTAResolver;
 import nju.gist.FaultResolver.ComFIL.ComFILResolver;
 import nju.gist.FaultResolver.FIC.FICResolver;
@@ -8,7 +9,9 @@ import nju.gist.FaultResolver.InverseCTD.InverseCTDResolver;
 import nju.gist.FaultResolver.LG.LGKind;
 import nju.gist.FaultResolver.LG.LGResolver;
 import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
+import nju.gist.FaultResolver.RI.RI;
 import nju.gist.FaultResolver.RI.RIResolver;
+import nju.gist.FaultResolver.SOFOT.SOFOTResolver;
 import nju.gist.FaultResolver.SP.SPResolver;
 import org.junit.Test;
 
@@ -24,7 +27,7 @@ public class FaultLocalizationTest {
 
     // common method
     private void execute(Consumer<FaultLocalization> flConsumer){
-        this.faultResolver = new PendingSchemasResolver();
+        this.faultResolver = new InverseCTDResolver();
         flConsumer.accept(new FaultLocalization(filePath, faultResolver));
     }
 
@@ -33,8 +36,9 @@ public class FaultLocalizationTest {
         execute(FaultLocalization::localization);
     }
 
-    // ml method
-    private void executeML(Consumer<MLFaultLoc> flConsumer){
+    // only for ml method
+    private void testML(String fileName) {
+        this.filePath =PATH + fileName;
         try {
             this.faultResolver = new CTAResolver(filePath);
         } catch (Exception e) {
@@ -42,34 +46,21 @@ public class FaultLocalizationTest {
         }
 
         assert faultResolver != null;
-        flConsumer.accept(new MLFaultLoc(filePath, faultResolver));
+        new MLFaultLoc(filePath, faultResolver).localization();
     }
 
-    private void testML(String fileName) {
-        this.filePath =PATH + fileName;
-        executeML(MLFaultLoc::localization);
-    }
-
-    // sp method
-    private void executeSP(Consumer<FaultLocalization> flConsumer){
-        this.faultResolver = new SPResolver(1);
-        flConsumer.accept(new FaultLocalization(filePath, faultResolver));
-    }
-
+    // only for sp method
     private void testSP(String fileName) {
         this.filePath =PATH + fileName;
-        executeSP(FaultLocalization::localizationByCA);
+        this.faultResolver = new SPResolver(2);
+        new FaultLocalization(filePath, faultResolver).localizationByCA();
     }
 
-    // advLG method
-    private void executeAdvLG(Consumer<FaultLocalization> flConsumer){
-        this.faultResolver = new LGResolver(LGKind.AdvLG);
-        flConsumer.accept(new FaultLocalization(filePath, faultResolver));
-    }
-
+    // only for AdvLG method
     private void testAdvLG(String fileName) {
         this.filePath =PATH + fileName;
-        executeAdvLG(FaultLocalization::localizationByCA);
+        this.faultResolver = new LGResolver(LGKind.AdvLG);
+        new FaultLocalization(filePath, faultResolver).localizationByCA();
     }
 
     @Test
