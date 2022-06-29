@@ -1,8 +1,8 @@
 package nju.gist.FileResolver;
 
-import java.util.List;
-
 public interface FileResolver {
+    // For comments, we consistently use "#" for comment lines
     String COMMENTS_LINE = " *#.*";
+    // blank line
     String BLANK_LINE = "";
 }

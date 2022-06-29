@@ -40,6 +40,8 @@ public class FaultFileResolver extends AbstractFileResolver{
                 }
                 faultMaps.add(faultMap);
             }
+
+            reader.close();
         }catch (IOException io){
             io.printStackTrace();
         }

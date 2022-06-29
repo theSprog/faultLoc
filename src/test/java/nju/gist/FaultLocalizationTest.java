@@ -27,7 +27,7 @@ public class FaultLocalizationTest {
 
     // common method
     private void execute(Consumer<FaultLocalization> flConsumer){
-        this.faultResolver = new InverseCTDResolver();
+        this.faultResolver = new PendingSchemasResolver();
         flConsumer.accept(new FaultLocalization(filePath, faultResolver));
     }
 

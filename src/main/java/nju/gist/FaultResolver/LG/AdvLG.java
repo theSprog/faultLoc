@@ -12,8 +12,8 @@ import java.util.stream.Stream;
 
 public class AdvLG extends LG{
     private final Checker checker;
-    private final Set<Schema> knownMinFaults;
     private int caseSize;
+    TestCase forRelabel;
 
     public class Edge{
         public int i;
@@ -48,35 +48,60 @@ public class AdvLG extends LG{
     }
 
 
-    public AdvLG(Checker checker, Set<Schema> knownMinFaults) {
+    public AdvLG(Checker checker, List<TestCase> Tpass) {
         this.checker = checker;
-        this.knownMinFaults = knownMinFaults;
+        assert !Tpass.isEmpty();
+        forRelabel = Tpass.get(0);
+        caseSize = forRelabel.size();
+        assert validFormat(Productor.ParaValues);
+    }
+
+    private boolean validFormat(List<Set<Integer>> paraValues) {
+        for (Set<Integer> paraValue : paraValues) {
+            if(paraValue.size() <= 2) {
+                if (paraValue.stream().allMatch(val -> val.equals(1) || val.equals(2))) {
+                    continue;
+                }else {
+                    return false;
+                }
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
     public void locateELA(List<TestCase> Tfail, List<MinFault> minFaults) {
-        try {
-            assert !Tfail.isEmpty();
-            caseSize = Tfail.get(0).size();
-            Set<Edge> edges = locateError(Tfail);
-            for (Edge edge : edges) {
-                minFaults.add(Productor.genMinFaultByEdge(caseSize, edge));
-            }
-
-        } catch (InvalidPropertiesFormatException e) {
-            e.printStackTrace();
+        assert !Tfail.isEmpty();
+        Set<Edge> edges = locateError(Tfail);
+        for (Edge edge : edges) {
+            minFaults.add(edge2MinFault(edge));
         }
     }
 
-    private Schema tc2s(TestCase testCase) throws InvalidPropertiesFormatException {
+    private MinFault edge2MinFault(Edge edge) {
+        MinFault res = new MinFault(caseSize);
+        if (edge.i_set) {
+            res.set(edge.i, (forRelabel.get(edge.i) % 2) + 1);
+        }else {
+            res.set(edge.i, forRelabel.get(edge.i));
+        }
+
+        if (edge.j_set) {
+            res.set(edge.j, (forRelabel.get(edge.j) % 2) + 1);
+        }else {
+            res.set(edge.j, forRelabel.get(edge.j));
+        }
+        return res;
+    }
+
+    private Schema tc2s(TestCase testCase) {
         Schema res = new Schema(testCase.size());
         for (int i = 0; i < testCase.size(); i++) {
-            if(testCase.get(i) == 1){   // set 1 to bool 0
+            if(testCase.get(i).equals(forRelabel.get(i))){   // set relative safe to bool 0
                 res.clear(i);
-            }else if(testCase.get(i) == 2){ // set 2 to bool 1
-                res.set(i);
             }else {
-                throw new InvalidPropertiesFormatException("AdvLG can just deal with g = 2, namely 0-1 problem");
+                res.set(i);
             }
         }
         return res;
@@ -86,9 +111,9 @@ public class AdvLG extends LG{
         TestCase res = new TestCase(schema.size());
         for (int i = 0; i < schema.size(); i++) {
             if(schema.get(i)){
-                res.set(i, 2);
+                res.set(i, (forRelabel.get(i) % 2) + 1);
             }else {
-                res.set(i, 1);
+                res.set(i, forRelabel.get(i));
             }
         }
         return res;
@@ -101,9 +126,8 @@ public class AdvLG extends LG{
      * 1−1 between As and C1
      * @param Tfail
      * @return
-     * @throws InvalidPropertiesFormatException
      */
-    private Set<Edge> locateError(List<TestCase> Tfail) throws InvalidPropertiesFormatException {
+    private Set<Edge> locateError(List<TestCase> Tfail) {
         Set<Edge> resE = new HashSet<>();
 
         Set<Integer> A = new HashSet<>();
@@ -153,7 +177,7 @@ public class AdvLG extends LG{
             }
             // T is a pass testCase with a potential fault factor f
 
-            Schema T1 = (Schema)T.clone();
+            Schema T1 = T.clone();
             for (Integer b : B) {
                 T1.set(b);
 
@@ -167,7 +191,7 @@ public class AdvLG extends LG{
 
             // we don't use SearchEndPoint but iterating for convenience
             // C0 is 0 in C which would cause fault, C1 is 1 in C which would cause fault
-            Schema T2 = (Schema)T.clone();
+            Schema T2 = T.clone();
             for (Integer c : C) {
                 T2.flip(c);
 
@@ -238,7 +262,7 @@ public class AdvLG extends LG{
     }
 
     /**
-     * convert bits to schema
+     * convert bits of number to schema
      * i.e. 9(1001) -> 1001
      * i.e. 15(1111) -> 1111
      * @param size

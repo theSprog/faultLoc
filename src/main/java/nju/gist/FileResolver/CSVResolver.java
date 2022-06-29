@@ -43,6 +43,8 @@ public class CSVResolver extends AbstractFileResolver{
                     HealthCaseList.add(tc);
                 }
             }
+
+            reader.close();
         }catch (IOException io){
             io.printStackTrace();
         }

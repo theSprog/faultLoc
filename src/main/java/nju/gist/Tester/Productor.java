@@ -4,7 +4,6 @@ import nju.gist.Common.Comb;
 import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
 import nju.gist.Common.TestCase;
-import nju.gist.FaultResolver.LG.AdvLG;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +27,12 @@ public class Productor {
         Productor.faultCaseSize = Values.size();
     }
 
+    public static void SetSafes(List<Integer> safes){
+        has_safe = true;
+        Productor.Safes = safes;
+        assert Safes.size() == ParaValues.size();
+    }
+
     public static TestCase genTestCase(Schema node, TestCase faultCase) {
         return new TestCase(gen(node, faultCase, RIGHT));
     }
@@ -44,10 +49,6 @@ public class Productor {
         return new MinFault(gen(node, faultCase, UNKNOWN));
     }
 
-    public static Comb genCombination(Schema node, TestCase testCase) {
-        return new Comb(gen(node, testCase, UNKNOWN));
-    }
-
     public static MinFault genMinFault(int node, TestCase faultCase) {
         return new MinFault(gen(node, faultCase, UNKNOWN));
     }
@@ -59,15 +60,17 @@ public class Productor {
     // generate TestCase from schema pattern
     private static ArrayList<Integer> gen(Schema node, TestCase faultCase, int provided){
         TestCase productRes = new TestCase(faultCaseSize);
-        int bitLen = faultCase.size();
 
-        for (int i = 0; i < bitLen; i++) {
+        for (int i = 0; i < faultCaseSize; i++) {
             if(node.get(i)){
                 productRes.set(i, faultCase.get(i));
             }else {
-                if(has_safe) {
-                    assert false;
+                // when do not gen MinFault
+                if(has_safe && provided != UNKNOWN) {
+                    // if user provided safe values, use it
+                    productRes.set(i, Safes.get(i));
                 }else {
+                    // else set to default safe values
                     productRes.set(i, provided);
                 }
             }
@@ -85,24 +88,20 @@ public class Productor {
         return res;
     }
 
+    /**
+     * comb to schema, 0 set to bool 0, non-0 set to bool 1
+     * (0, 2, 2, 1) -> 0111
+     * @param comb
+     * @return
+     */
     public static Schema toSchema(Comb comb) {
         Schema res = new Schema(comb.size());
         for (int i = 0; i < comb.size(); i++) {
-            // if comb[i] is 0, Schema bit is also set to 0
+            // if comb[i] is 0, Schema bit is also set to 0, in other words, use default 0
             if(comb.get(i).equals(0)) continue;
             // else set to 1
             res.set(i);
         }
         return res;
-    }
-
-    // specify for advLG
-    public static MinFault genMinFaultByEdge(int caseSize, AdvLG.Edge edge) {
-        MinFault productRes = new MinFault(caseSize);
-
-        productRes.set(edge.i, edge.i_set ? 2 : 1);
-        productRes.set(edge.j, edge.j_set ? 2 : 1);
-
-        return productRes;
     }
 }

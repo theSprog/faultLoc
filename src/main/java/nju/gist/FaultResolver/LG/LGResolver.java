@@ -20,7 +20,7 @@ public class LGResolver extends AbstractFaultResolver {
     public List<MinFault> findMinFaults() {
         lg = lgKind == LGKind.SafeValueLG ?
                 new SafeValueLG(checker, knownMinFaults) :
-                new AdvLG(checker, knownMinFaults);
+                new AdvLG(checker, Tpass);
 
         if(lgKind == LGKind.SafeValueLG){
             lg.locate(faultCase);

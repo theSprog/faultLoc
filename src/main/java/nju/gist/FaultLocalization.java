@@ -5,7 +5,9 @@ import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.FaultResolver;
 import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
 import nju.gist.FileResolver.CSVResolver;
+import nju.gist.FileResolver.SafeResolver;
 import nju.gist.Tester.Checker;
+import nju.gist.Tester.Productor;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -14,6 +16,7 @@ import java.util.List;
 public class FaultLocalization {
     private static final String TEST_SET_SUFFIX = ".csv";
     private static final String FAULT_SUFFIX = ".fault";
+    private static final String SAFE_SUFFIX = ".safe";
     private final FaultResolver faultResolver;
     private final List<TestCase> Tfail;
     private final List<TestCase> Tpass;
@@ -28,6 +31,11 @@ public class FaultLocalization {
         Tfail = csvResolver.getFaultCaseList();
         Tpass = csvResolver.getHealthCaseList();
         faultResolver.setTfailAndTpass(Tfail, Tpass);
+
+        SafeResolver safeResolver = new SafeResolver(path.replace(TEST_SET_SUFFIX, SAFE_SUFFIX), checker);
+        if(safeResolver.hasSafes()){
+            Productor.SetSafes(safeResolver.getSafes());
+        }
     }
 
     public void localization() {
