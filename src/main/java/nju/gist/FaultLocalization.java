@@ -102,6 +102,6 @@ public class FaultLocalization {
             faultResolver.findMinFaults();
             size += faultResolver.getChecker().getExecSet().size();
         }
-        return size == 0 ? null : size / (double) Tfail.size();
+        return size / (double) Tfail.size();
     }
 }

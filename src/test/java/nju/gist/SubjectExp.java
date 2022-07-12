@@ -132,14 +132,8 @@ public class SubjectExp {
             PrecisionData pre = new PrecisionData();
             RecallData rec = new RecallData();
 
-            String[] project_path = subject.split(PATH)[1].split("/", 2);
-            String project = project_path[0];
-            String path = project_path[1].replaceAll("[.]csv", "");
-
-            pre.setProject(project);
-            rec.setProject(project);
-            pre.setPath(path);
-            rec.setPath(path);
+            fillProjectAndPath(subject, pre);
+            fillProjectAndPath(subject, rec);
 
             logger.info("FIC start");
             faultResolver = new FICResolver();
@@ -264,14 +258,8 @@ public class SubjectExp {
             NoSafePrecisionData pre = new NoSafePrecisionData();
             NoSafeRecallData rec = new NoSafeRecallData();
 
-            String[] project_path = subject.split(PATH)[1].split("/", 2);
-            String project = project_path[0];
-            String path = project_path[1].replaceAll("[.]csv", "");
-
-            pre.setProject(project);
-            rec.setProject(project);
-            pre.setPath(path);
-            rec.setPath(path);
+            fillProjectAndPath(subject, pre);
+            fillProjectAndPath(subject, rec);
 
             logger.info("FIC start");
             faultResolver = new FICResolver();
@@ -388,12 +376,7 @@ public class SubjectExp {
             String subject = subjects.get(i);
             logger.info(String.format("Enter %d-th subject: %s", i, subject));
             AdditionalTCData tcData = new AdditionalTCData();
-
-            String[] project_path = subject.split(PATH)[1].split("/", 2);
-            String project = project_path[0];
-            String path = project_path[1].replaceAll("[.]csv", "");
-            tcData.setProject(project);
-            tcData.setPath(path);
+            fillProjectAndPath(subject, tcData);
             Double avgAdTC = 0d;
 
             logger.info("FIC start");
@@ -409,22 +392,22 @@ public class SubjectExp {
             logger.info("AIFL start");
             faultResolver = new AIFLResolver();
             avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
-            tcData.setAIFL(avgAdTC);
+            tcData.setAIFL(faultResolver.getSize() > 15 ? null : avgAdTC);
 
             logger.info("SOFOT start");
             faultResolver = new SOFOTResolver();
             avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
             tcData.setSOFOT(avgAdTC);
 
-            logger.info("TRT start");
-            faultResolver = new AdderTRTResolver();
-            avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
-            tcData.setTRT(avgAdTC);
-
             logger.info("ComFIL start");
             faultResolver = new ComFILResolver();
             avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
-            tcData.setComFIL(avgAdTC);
+            tcData.setComFIL(faultResolver.getSize() > 15 ? null : avgAdTC);
+
+            logger.info("TRT start");
+            faultResolver = new AdderTRTResolver();
+            avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
+            tcData.setTRT(faultResolver.getSize() > 24 ? null : avgAdTC);
 
             logger.info("InverseCTD start");
             faultResolver = new InverseCTDResolver();
@@ -449,7 +432,7 @@ public class SubjectExp {
             logger.info("SP start");
             faultResolver = new SPResolver(2);
             avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
-            tcData.setSP(avgAdTC);
+            tcData.setSP(faultResolver.getSize() > 100 ? null : avgAdTC);
 
             logger.info("CMS start");
             faultResolver = new PendingSchemasResolver();
@@ -472,11 +455,7 @@ public class SubjectExp {
             logger.info(String.format("Enter %d-th subject: %s", i, subject));
             TimeData time = new TimeData();
 
-            String[] project_path = subject.split(PATH)[1].split("/", 2);
-            String project = project_path[0];
-            String path = project_path[1].replaceAll("[.]csv", "");
-            time.setProject(project);
-            time.setPath(path);
+            fillProjectAndPath(subject, time);
             long start = 0;
             long end = 0;
 
@@ -570,6 +549,14 @@ public class SubjectExp {
         }
         String timeXlsxName = PATH + "execTime.xlsx";
         EasyExcel.write(timeXlsxName, TimeData.class).sheet("execTime").doWrite(timeDatas);
+    }
+
+    private void fillProjectAndPath(String subject, AbstractData data) {
+        String[] project_path = subject.split(PATH)[1].split("/", 2);
+        String project = project_path[0];
+        String path = project_path[1].replaceAll("[.]csv", "");
+        data.setProject(project);
+        data.setPath(path);
     }
 
 

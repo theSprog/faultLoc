@@ -24,4 +24,16 @@ pendingSize = 0
 
 ------
 
+AIFL > 15, ComFIL > 15, TRT > 24, SP > 100 都不可做
+
+AIFL 的 Threshold 设置为参数 N
+SP 的 degree 设置为 2
+
+precision 的 - 代表不可做, NAN 代表分母为 0 
+recall 的 - 代表不可做
+
+additional testcase 的计算方式是将所有错误测试用例所需要的的additional testcase总和相加除以错误测试用例的数目，
+即平均一条测试用例需要多少additional testcase
+
+execTime 的单位是毫秒
 
