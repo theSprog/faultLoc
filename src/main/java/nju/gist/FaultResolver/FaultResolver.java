@@ -11,6 +11,9 @@ public interface FaultResolver {
     void setTfailAndTpass(List<TestCase> faultCaseList, List<TestCase> healthCaseList);
     void setFaultCase(TestCase faultCase);
     void setChecker(Checker checker);
-    List<Set<Integer>> initFromCA(List<TestCase> faultCaseList, List<TestCase> healthCaseList);
+    Integer getSize();
+
+    Checker getChecker();
     List<MinFault> findMinFaults();
+    Set<TestCase> getHealthTestCases();
 }

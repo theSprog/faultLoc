@@ -22,15 +22,16 @@ public class CSVResolver extends AbstractFileResolver{
 
     private void parseCSV(String filePath) {
         File csv = new File(filePath);
+        assert csv.exists();
         String line;
 
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(csv));
+        // The FileReader is not buffered and cannot read by line,
+        // so it needs to be wrapped in a buffered class
+        try (BufferedReader reader = new BufferedReader(new FileReader(csv))) {
             while ((line = reader.readLine()) != null){
                 if(line.matches(COMMENTS_LINE) || line.equals(BLANK_LINE)) continue;
 
                 String[] confs = line.split(SEPARATOR);
-
                 TestCase tc = new TestCase();
                 for (String conf : confs) {
                     tc.add(Integer.parseInt(conf.strip()));
@@ -43,8 +44,6 @@ public class CSVResolver extends AbstractFileResolver{
                     HealthCaseList.add(tc);
                 }
             }
-
-            reader.close();
         }catch (IOException io){
             io.printStackTrace();
         }

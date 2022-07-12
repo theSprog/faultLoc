@@ -1,5 +1,6 @@
 package nju.gist.Tester;
 
+import nju.gist.Common.MinFault;
 import nju.gist.Common.TestCase;
 import nju.gist.FileResolver.FaultFileResolver;
 
@@ -14,8 +15,8 @@ public class Checker {
     private final Set<TestCase> htc;
 
     public Checker(String faultFilePath) {
-        FaultFileResolver faultResolver = new FaultFileResolver();
-        faultMaps = faultResolver.getFaultFeatures(faultFilePath);
+        FaultFileResolver faultFileResolver = new FaultFileResolver();
+        faultMaps = faultFileResolver.getFaultFeatures(faultFilePath);
         htc = new HashSet<>();
         execSet = new HashSet<>();
     }
@@ -23,11 +24,20 @@ public class Checker {
     public Set<TestCase> getHtc() {
         return htc;
     }
+    public Set<TestCase> getExecSet() {
+        return execSet;
+    }
 
     public void clearHtc() {
         htc.clear();
     }
+    public void clearExecSet() {
+        execSet.clear();
+    }
 
+    public int faultNum() {
+        return faultMaps.size();
+    }
     /**
      * @return true if this testCase pass the execution, false otherwise
      */
@@ -38,7 +48,7 @@ public class Checker {
                 return false;
             }
         }
-
+        // if pass the checker, record it
         htc.add(testCase);
         return true;
     }
@@ -56,5 +66,15 @@ public class Checker {
             }
         }
         return true;
+    }
+
+    public Set<MinFault> faults2minFaults() {
+        Set<MinFault> res = new HashSet<>();
+        for (HashMap<Integer, Integer> faultMap : faultMaps) {
+            MinFault minFault = new MinFault(Productor.faultCaseSize);
+            faultMap.forEach(minFault::set);
+            res.add(minFault);
+        }
+        return res;
     }
 }

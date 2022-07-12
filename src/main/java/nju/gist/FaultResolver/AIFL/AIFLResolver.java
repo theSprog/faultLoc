@@ -6,6 +6,7 @@ import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AbstractFaultResolver;
 import nju.gist.Tester.Productor;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,10 @@ public class AIFLResolver extends AbstractFaultResolver {
 
     @Override
     public List<MinFault> findMinFaults() {
+        if(faultCase.size() > 15) {
+            logger.warn(String.format("AIFLResolver: N=%d, it's too large to compute, please use feasible resolver", faultCase.size()));
+            return minFaults;
+        }
         AIFL aifl = new AIFL(checker, faultCase, Productor.ParaValues);
         aifl.setTfailAndTpass(Tfail, Tpass);
         aifl.setThreshold(faultCase.size());

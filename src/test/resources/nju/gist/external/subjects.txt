@@ -32,7 +32,6 @@ firefox/libjar/nsJAR.cpp
 firefox/zlib/gzread.c
 fvwm/fvwm/virtual.c
 fvwm/modules/FvwmWharf/FvwmWharf.c
-fvwm/modules/FvwmWharf/FvwmWharf.c
 fvwm/fvwm/events.c
 fvwm/fvwm/ewmh_icons.c
 fvwm/libs/FlocaleCharset.c
@@ -56,7 +55,6 @@ gnuplot/src/datafile.c
 gnuplot/src/util.c
 gnuplot/src/plot.c
 irssi/src/core/recode.c
-irssi/src/core/recode.c
 irssi/src/core/modules-load.c
 irssi/src/core/modules.c
 libpng/contrib/libtests/pngvalid.c
@@ -69,14 +67,11 @@ libssh/libssh/auth.c
 libssh/src/pki_crypto.c
 libssh/src/pki.c
 libssh/src/messages.c
-libssh/src/messages.c
 libssh/libssh/options.c
 libssh/src/channels.c
 libssh/libssh/kex.c
 libssh/src/dh.c
 libssh/src/keys.c
-libssh/src/keys.c
-libssh/src/keyfiles.c
 libssh/src/keyfiles.c
 libssh/src/known_hosts.c
 libssh/src/client.c
@@ -124,5 +119,4 @@ vim/src/memfile.c
 vim/src/netbeans.c
 vim/src/if_mzsch.c
 xfig/w_cmdpanel.c
-xterm/main.c
 xterm/main.c

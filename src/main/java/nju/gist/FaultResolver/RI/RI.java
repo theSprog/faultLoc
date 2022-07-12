@@ -31,7 +31,7 @@ public class RI {
             return null;
         }
 
-        Schema S = (Schema) currentPattern.clone();
+        Schema S = currentPattern.clone();
         Schema S_related = new Schema(S.size());
         while (true) {
             Schema errorFactor = isolate(currentPattern, S);
@@ -73,8 +73,8 @@ public class RI {
     }
 
     private Schema isolate(Schema currentPattern, Schema susp_schema) {
-        Schema S = (Schema) susp_schema.clone();
-        Schema S_unrelated = new Schema(susp_schema.size());
+        Schema S = susp_schema.clone();
+        Schema S_unrelated = new Schema(susp_schema.size(), false);
 
         while(S.cardinality() != 1) {
             divide(S);

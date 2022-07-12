@@ -2,6 +2,7 @@ package nju.gist.FaultResolver.CMS;
 
 import nju.gist.Common.Schema;
 import nju.gist.Common.TestCase;
+import nju.gist.FaultResolver.PendingSchemas.PendingSchemasRange.SchemasPath;
 import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
 import nju.gist.FaultResolver.PendingSchemas.SchemasUtil;
 import nju.gist.Tester.Checker;
@@ -53,9 +54,9 @@ public class CMS {
         for (Schema cx : cxs) {
             for (Schema cn : cns) {
                 if(isSubSchema(cn, cx)){
-                    Schema diff = SchemasUtil.getDiffs(cn, cx);
-                    if (diff.cardinality() > diffNum) {
-                        diffNum = diff.cardinality();
+                    int pathLen = SchemasUtil.pathLen(cn, cx);
+                    if (pathLen > diffNum) {
+                        diffNum = pathLen;
                         longest.clear();
                         longest.add(cn);
                         longest.add(cx);
@@ -120,7 +121,7 @@ public class CMS {
     }
 
     public Schema narrowFs(Schema fs) {
-        Schema CandiMFS = (Schema) fs.clone();
+        Schema CandiMFS = fs.clone();
         // hss 代表局部的健康节点
         Set<Schema> hss = new HashSet<>(List.of(new Schema(fs.cardinality())));
 

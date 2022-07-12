@@ -15,7 +15,7 @@ public class SP {
     and other positions is replaced placeholder "DUMMY_VALUE"
     i.e. (1,2,3,4) is a TestCase, and (-, 3, 2, 4) is a Combination
      */
-    private static final int DUMMY_VALUE = 0;
+    private static final int DUMMY_VALUE = Productor.UNKNOWN;
     // degree denotes the t of t-way
     private final int degree;
 
@@ -93,34 +93,10 @@ public class SP {
     public Set<Comb> getAllSuspiciousCombinations(){
         Set<Comb> res = new HashSet<>();
         for (TestCase failCase : tfail) {
-            Set<Comb> combs = getTwayCombinations(degree, failCase);
-            res.addAll(combs);
+            res.addAll(failCase.tWayComb(degree));
         }
         res.removeIf(this::containedInPass);
         this.piSize = res.size();
-        return res;
-    }
-
-    /**
-     * all combinations each contain "degree" factors from failCase,
-     * and other positions is replaced placeholder "DUMMY_VALUE"
-     * @param degree
-     * @param failCase
-     * @return
-     */
-    private Set<Comb> getTwayCombinations(int degree, TestCase failCase) {
-        Set<Comb> res = new HashSet<>();
-
-        List<Integer> testCaseIndex = new ArrayList<>();
-        for (int i = 0; i < failCase.size(); i++) {
-            testCaseIndex.add(i);
-        }
-
-        Combination<Integer> combinationIndex = Combination.of(testCaseIndex, degree);
-        for (List<Integer> combIndex : combinationIndex) {
-            res.add(new Comb(failCase, combIndex));
-        }
-
         return res;
     }
 
@@ -136,8 +112,8 @@ public class SP {
     /**
      *(1,2,3,4) contain (-, 2, 3, -)
      * @param comb
-     * @param passCase
-     * @return true if comb is contained in passCase, false otherwise
+     * @param testCase
+     * @return true if comb is contained in passed test case(namely parameter testCase), false otherwise
      */
     private boolean containedIn(Comb comb, TestCase testCase) {
         assert comb.size() == testCase.size();
@@ -199,6 +175,7 @@ public class SP {
                     itemTable.get(i).Re = itemTable.get(i-1).Re + 1;
                 }
             }
+            // R is Re + Rc, it has been able to represent the sequential relationship
             itemTable.get(i).R = itemTable.get(i).Re + itemTable.get(i).Rc;
         }
 
@@ -317,5 +294,26 @@ public class SP {
         Set<pair> pairs = rhoList.get(index);
         pair min = Collections.min(pairs, (o1, o2) -> (o1.rho == o2.rho) ? 0 : ((o1.rho - o2.rho) > 0 ? 1 : -1));
         return min.value;
+    }
+
+    /**
+     *
+     * @param suspiciousCombination
+     * @param d
+     * @return smaller combinations(d is degree of combinations)
+     */
+    public Set<Comb> smallerCombs(Comb suspiciousCombination, int d) {
+        Set<Comb> res = new HashSet<>();
+        List<Integer> testCaseIndex = new ArrayList<>();
+        for (int i = 0; i < suspiciousCombination.size(); i++) {
+            if(suspiciousCombination.get(i) != 0) {
+                testCaseIndex.add(i);
+            }
+        }
+        Combination<Integer> combinationIndex = Combination.of(testCaseIndex, d);
+        for (List<Integer> combIndex : combinationIndex) {
+            res.add(new Comb(new TestCase(suspiciousCombination), combIndex));
+        }
+        return res;
     }
 }

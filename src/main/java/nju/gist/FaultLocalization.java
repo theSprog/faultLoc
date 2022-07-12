@@ -3,14 +3,16 @@ package nju.gist;
 import nju.gist.Common.MinFault;
 import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.FaultResolver;
-import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
+import nju.gist.FaultResolver.PendingSchemas.SchemasUtil;
+import nju.gist.FaultResolver.SP.SPResolver;
 import nju.gist.FileResolver.CSVResolver;
 import nju.gist.FileResolver.SafeResolver;
 import nju.gist.Tester.Checker;
 import nju.gist.Tester.Productor;
+import org.apache.log4j.Logger;
 
 import java.math.BigInteger;
-import java.util.List;
+import java.util.*;
 
 
 public class FaultLocalization {
@@ -20,6 +22,8 @@ public class FaultLocalization {
     private final FaultResolver faultResolver;
     private final List<TestCase> Tfail;
     private final List<TestCase> Tpass;
+    private static final Logger logger = Logger.getLogger(FaultLocalization.class);
+
 
     public FaultLocalization(String path, FaultResolver faultResolver) {
         this.faultResolver = faultResolver;
@@ -35,61 +39,69 @@ public class FaultLocalization {
         SafeResolver safeResolver = new SafeResolver(path.replace(TEST_SET_SUFFIX, SAFE_SUFFIX), checker);
         if(safeResolver.hasSafes()){
             Productor.SetSafes(safeResolver.getSafes());
+        }else {
+            Productor.clearSafes();
         }
     }
 
-    public void localization() {
+    // one faultCase one time, if locate by covering array, use localizationByCA instead
+    public Set<MinFault> localization() {
+        Set<MinFault> minFaults = new HashSet<>();
+        faultResolver.getChecker().clearExecSet();
         for (TestCase faultCase : Tfail) {
             faultResolver.setFaultCase(faultCase);
 
-            long startMil = System.currentTimeMillis();
+//            logger.info("start finding MinFaults");
+//            long startMil = System.currentTimeMillis();
+            minFaults.addAll(faultResolver.findMinFaults());
+//            long endMil = System.currentTimeMillis();
+//            logger.info("over finding MinFaults" + "ExecutionTime: " + (endMil - startMil) + "ms");
+        }
+        return minFaults;
+    }
+
+    public Map<TestCase, BigInteger> getPendingSchemasSize(){
+        Map<TestCase, BigInteger> res = new HashMap<>();
+
+        for (TestCase faultCase : Tfail) {
+            faultResolver.setFaultCase(faultCase);
+//            logger.info("start finding MinFaults");
             List<MinFault> minFaults = faultResolver.findMinFaults();
-            long endMil = System.currentTimeMillis();
+//            logger.info("over finding MinFaults");
+            Set<TestCase> healthTestCases = faultResolver.getHealthTestCases();
 
-            System.out.println(faultCase + " fails, and the minFaults might be:");
-            minFaults.forEach(System.out::println);
-
-            System.out.println("ExecutionTime: " + (endMil - startMil) + "ms");
-            System.out.println();
+//            long startMil = System.currentTimeMillis();
+//            logger.debug("start computing pendingSchema size");
+            BigInteger pdSize = SchemasUtil.getPendingSchemasSizeAdv(minFaults, healthTestCases, faultCase);
+//            logger.debug("over computing pendingSchema size");
+//            long endMil = System.currentTimeMillis();
+            res.put(faultCase, pdSize);
+//            System.out.println(faultCase + " fails, \n" +
+//                    "the pendingSchemas size is: " + pdSize);
+//
+//            System.out.println("ExecutionTime: " + (endMil - startMil) + "ms");
+//            System.out.println();
         }
+        return res;
     }
 
-    public void getPendingSchemasSize(){
-        // 除了 PendingSchemasResolver, 其他的 faultResolver 没有 pendingSchemas 这个概念
-        if(!(faultResolver instanceof PendingSchemasResolver)){
-            throw new IllegalCallerException("Only PendingSchemasResolver has method getPendingSchemas");
-        }
+    public Set<MinFault> localizationByCA() {
+        faultResolver.getChecker().clearExecSet();
+        assert !Tfail.isEmpty();
+        // just for initialization, it is a mistake on design of this project's architecture
+        faultResolver.setFaultCase(Tfail.get(0));
+        return new HashSet<>(faultResolver.findMinFaults());
+    }
 
+    public Double getAvgAdTC() {
+        int size = 0;
+        faultResolver.getChecker().clearExecSet();
         for (TestCase faultCase : Tfail) {
+            // setFaultCase will clear execSet
             faultResolver.setFaultCase(faultCase);
-
-            long startMil = System.currentTimeMillis();
-//            long pendingSchemasSize = ((PendingSchemasResolver) faultResolver).getPendingSchemasSize();
-//            Set<Schema> pendingSchemas = ((PendingSchemasResolver) faultResolver).getPendingSchemas();
-            BigInteger res = ((PendingSchemasResolver) faultResolver).getPendingSchemasSizeAdv();
-            long endMil = System.currentTimeMillis();
-
-//            System.out.println(faultCase + " fails, \n" +
-//                    "the pendingSchemas size is: " + pendingSchemasSize);
-//            System.out.println(faultCase + " fails, \n" +
-//                    "the pendingSchemas size is: " + pendingSchemas.size());
-            System.out.println(faultCase + " fails, \n" +
-                    "the pendingSchemas size is: " + res);
-
-            System.out.println("ExecutionTime: " + (endMil - startMil) + "ms");
-            System.out.println();
+            faultResolver.findMinFaults();
+            size += faultResolver.getChecker().getExecSet().size();
         }
-    }
-
-    public void localizationByCA() {
-        long startMil = System.currentTimeMillis();
-        List<MinFault> minFaults = faultResolver.findMinFaults();
-        long endMil = System.currentTimeMillis();
-
-        System.out.println("the minFaults might be:");
-        minFaults.forEach(System.out::println);
-
-        System.out.println("ExecutionTime: " + (endMil - startMil) + "ms");
-        System.out.println();
+        return size == 0 ? null : size / (double) Tfail.size();
     }
 }

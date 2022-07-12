@@ -15,6 +15,10 @@ public class ComFILResolver extends AbstractFaultResolver {
 
     @Override
     public List<MinFault> findMinFaults() {
+        if(faultCase.size() > 15) {
+            logger.warn(String.format("ComFILResolver: N=%d, it's too large to compute, please use feasible resolver", faultCase.size()));
+            return minFaults;
+        }
         Set<Comb> resolve = resolve();
         for (Comb combination : resolve) {
             minFaults.add(new MinFault(combination));
@@ -24,8 +28,11 @@ public class ComFILResolver extends AbstractFaultResolver {
 
     private Set<Comb> resolve(){
         comFIL = new ComFIL();
+        Set<Comb> faultCasePowerSet= new HashSet<>();
+        for (TestCase faultCase : Tfail) {
+            faultCasePowerSet = comFIL.powerSet(faultCase);
+        }
 
-        Set<Comb> faultCasePowerSet = comFIL.powerSet(faultCase);
         Set<Comb> tPassPowerSet = new HashSet<>();
         for (TestCase tpass : Tpass) {
             tPassPowerSet.addAll(comFIL.powerSet(tpass));

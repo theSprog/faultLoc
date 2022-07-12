@@ -24,8 +24,7 @@ public class SafeValueLG extends LG{
 
     @Override
     public void locate(TestCase testCase) {
-        Schema faultPattern = new Schema(testCase.size());
-        faultPattern.set(0, testCase.size());
+        Schema faultPattern = new Schema(testCase.size(), true);
         locateError(faultPattern, testCase);
     }
 

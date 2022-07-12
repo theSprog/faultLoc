@@ -1,5 +1,7 @@
+/.idea
 /target
 /CT_Fault_location
 /tools
+/subject
 *.pdf
 *.pptx

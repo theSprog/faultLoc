@@ -1,18 +1,21 @@
-package nju.gist.FaultResolver.TNTResolver;
+package nju.gist.FaultResolver.TRTResolver;
 
 import nju.gist.Common.MinFault;
-import nju.gist.Common.TestCase;
 import nju.gist.Tester.Productor;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class AdderTNTResolver extends AbstractFaultTNTResolver {
+public class AdderTRTResolver extends AbstractFaultTRTResolver {
     private Set<Integer> minFaultNodes;
 
     @Override
     public List<MinFault> findMinFaults() {
+        if(size > 24) {
+            logger.warn(String.format("AdderTRTResolver: N=%d, it's too large to compute, please use feasible resolver", faultCase.size()));
+            return minFaults;
+        }
         this.minFaultNodes = new HashSet<>();
 
         for (int node = 1; node <= maxNode; node++) {

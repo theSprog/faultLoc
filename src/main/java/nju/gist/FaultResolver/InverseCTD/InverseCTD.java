@@ -32,6 +32,13 @@ public class InverseCTD {
         Integer nowFactor = faultCase.get(i);
         HashSet<TestCase> res = new HashSet<>();
 
+        if(Productor.TWO_VAL_EXP){
+            TestCase temp = new TestCase(faultCase);
+            temp.set(i, faultCase.get(i) % 2 + 1);
+            res.add(temp);
+            return res;
+        }
+
         for (Integer factor : factors) {
             // we do not consider factor which appear in Tfail
             if(!factor.equals(nowFactor) && !appearIn(Tfail, i, factor)){

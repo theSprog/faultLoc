@@ -2,6 +2,7 @@ package nju.gist.FileResolver;
 
 import nju.gist.Common.TestCase;
 import nju.gist.Tester.Checker;
+import org.apache.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,7 +25,7 @@ public class SafeResolver extends AbstractFileResolver{
         this.checker = checker;
         if (!safeFile.exists()){
             hasSafes = false;
-            System.out.println(path + ": safe file do not exist");
+            logger.warn("safe file do not exist, it might influence the result of localization!!");
         }else {
             hasSafes = true;
         }
@@ -32,10 +33,9 @@ public class SafeResolver extends AbstractFileResolver{
 
     public List<Integer> getSafes() {
         String line;
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(safeFile));
-            while ((line = reader.readLine()) != null){
-                if(line.matches(COMMENTS_LINE) || line.equals(BLANK_LINE)) continue;
+        try (BufferedReader reader = new BufferedReader(new FileReader(safeFile))) {
+            while ((line = reader.readLine()) != null) {
+                if (line.matches(COMMENTS_LINE) || line.equals(BLANK_LINE)) continue;
 
                 String[] safeValues = line.split(SEPARATOR);
 
@@ -47,9 +47,7 @@ public class SafeResolver extends AbstractFileResolver{
 
                 assert checker.executeTestCase(safeTC);
             }
-
-            reader.close();
-        }catch (IOException io){
+        } catch (IOException io) {
             io.printStackTrace();
         }
 

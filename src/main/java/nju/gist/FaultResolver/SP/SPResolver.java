@@ -10,25 +10,34 @@ import java.util.List;
 import java.util.Set;
 
 public class SPResolver extends AbstractFaultResolver {
-    private SP sp;
-    private int degree;
+    private final SP sp;
+    private final int degree;
 
     public SPResolver(int degree) {
         this.sp = new SP(degree);
+        this.degree = degree;
     }
 
     @Override
     public List<MinFault> findMinFaults() {
+        if(size > 100 || size < degree) return minFaults;
+        // piHat is new suspicious combinations,
+        // it should be gradually decreasing for iteratively generated passing test cases
         int piHatSize;
+        // pi is previous suspicious combinations,
+        // if pi == piHat means that the number of suspicious combinations can no longer be lowered
         int piSize = 0;
 
         while (true){
             sp.setTpassAndTfail(Tpass, Tfail);
             Set<Comb> suspiciousCombinations = sp.getAllSuspiciousCombinations();
             piHatSize = suspiciousCombinations.size();
+            // if new suspicious combinations presence and
+            // it has been reduced by the last iteration (piHatSize < piSize)
+            // or this is first iteration
             if(piHatSize != 0 && (piHatSize < piSize || piSize == 0)) {
+                piSize = suspiciousCombinations.size();
                 List<Comb> piRanked = sp.rank(suspiciousCombinations);
-                piSize = piRanked.size();
                 List<TestCase> newTestCases = sp.genNewTestCases(piRanked);
                 for (TestCase newTestCase : newTestCases) {
                     boolean pass = checker.executeTestCase(newTestCase);
@@ -41,9 +50,14 @@ public class SPResolver extends AbstractFaultResolver {
 
             // The program will still run to this point if piHatSize == 0 initially
             // that means the minimal degree of MFSs is greater than we provided
-            if(piHatSize == piSize){
+            if(piHatSize == 0 || piHatSize == piSize){
                 for (Comb suspiciousCombination : suspiciousCombinations) {
-                    minFaults.add(new MinFault(suspiciousCombination));
+                    for (int i = 1; i <= degree; i++) {
+                        Set<Comb> Ri = sp.smallerCombs(suspiciousCombination, i);
+                        for (Comb smallerComb : Ri) {
+                            minFaults.add(new MinFault(smallerComb));
+                        }
+                    }
                 }
                 break;
             }

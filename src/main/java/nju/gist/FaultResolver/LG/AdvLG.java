@@ -1,10 +1,12 @@
 package nju.gist.FaultResolver.LG;
 
+import nju.gist.Common.Comb;
 import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
 import nju.gist.Common.TestCase;
 import nju.gist.Tester.Checker;
 import nju.gist.Tester.Productor;
+import org.raistlic.common.permutation.Combination;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -139,12 +141,11 @@ public class AdvLG extends LG{
         Set<Edge> Ep = DiscoverEp(A, As, Ap);
         resE.addAll(Ep);    // 1−0 inside Ap done
 
-        Schema fault_11_inB = new Schema(caseSize);
-        fault_11_inB.set(0, caseSize);  // set all 1 in [0, caseSize)
+        Schema fault_11_inB = new Schema(caseSize, true);
         for (Integer a : A) {
             fault_11_inB.clear(a);
-        }// 1-1 inside B
-
+        }
+        // 1-1 inside B
         Set<Integer> B = locateErrorInTest(fault_11_inB, resE); // 1−1 inside B done
 
         // C = All - (A+B)
@@ -155,28 +156,39 @@ public class AdvLG extends LG{
 
         Set<Integer> C0 = new HashSet<>();
 
+
+
         for (Integer f : As) {
             // Fix Tf = 1 and Ti = 0 for all i in (A \/ B)\{f}
             Schema T = new Schema(caseSize);
             T.set(f);   // Tf = 1
-
-            List<Integer> list = new ArrayList<>(C);
-            for (int bitPattern = 0; bitPattern < (1 << C.size()); bitPattern++) {
-                Set<Integer> subset = selectSubsetFromList(list, bitPattern);
-                for (Integer vertex : subset) {
-                    T.set(vertex);
-                }
-                boolean pass = checker.executeTestCase(s2tc(T));
-                if(pass){
-                    break;
-                }else {
-                    for (Integer vertex : subset) {
-                        T.clear(vertex);
+            List<Integer> Clist = new ArrayList<>(C);
+            boolean found = false;
+            for (int i = 1; i <= Math.min(2, Clist.size()) && !found; i++) {
+                Combination<Integer> combinationIndex = Combination.of(Clist, i);
+                for (List<Integer> combIndex : combinationIndex) {
+                    for (Integer vertex : combIndex) {
+                        T.set(vertex);
+                    }
+                    boolean pass = checker.executeTestCase(s2tc(T));
+                    if(pass){
+                        found = true;
+                        break;
+                    }else {
+                        for (Integer vertex : combIndex) {
+                            T.clear(vertex);
+                        }
                     }
                 }
             }
-            // T is a pass testCase with a potential fault factor f
 
+            // single factor fault
+            if(!found) {
+                resE.add(new Edge(f, true, f, true));
+                continue;
+            }
+
+            // T is a pass testCase with a potential fault factor f
             Schema T1 = T.clone();
             for (Integer b : B) {
                 T1.set(b);
@@ -211,7 +223,7 @@ public class AdvLG extends LG{
             }
         }
 
-
+        // 1-1 in As
         if(As.size() >= 2){
             Schema T = new Schema(caseSize);
             for (Integer c : C0) {
@@ -237,46 +249,6 @@ public class AdvLG extends LG{
         }
 
         return resE;
-    }
-
-    /**
-     * Select subsets according to bit patterns
-     * i.e. list = [1,3,5], bitPattern = 011 -> {3, 5}
-     * i.e. list = [2,5,9,11], bitPattern = 1001 -> {2, 11}
-     *
-     * @param list
-     * @param bitPattern
-     * @return
-     */
-    private Set<Integer> selectSubsetFromList(List<Integer> list, int bitPattern) {
-        Set<Integer> res = new HashSet<>();
-        Schema schema = convert2schema(list.size(), bitPattern);
-        int nextSetBitIndex = schema.nextSetBit(0);
-
-        while (nextSetBitIndex != -1){
-            res.add(list.get(nextSetBitIndex));
-            nextSetBitIndex = schema.nextSetBit(nextSetBitIndex + 1);
-        }
-
-        return res;
-    }
-
-    /**
-     * convert bits of number to schema
-     * i.e. 9(1001) -> 1001
-     * i.e. 15(1111) -> 1111
-     * @param size
-     * @param bitPattern
-     * @return
-     */
-    private Schema convert2schema(int size, int bitPattern) {
-        Schema res = new Schema(size);
-        for (int i = 0; bitPattern != 0; i++, bitPattern = bitPattern >> 1) {
-            if((bitPattern & 1) == 1){
-                res.set(size - i - 1);
-            }
-        }
-        return res;
     }
 
     private Set<Integer> locateErrorInTest(Schema faultPattern, Set<Edge> resE) {

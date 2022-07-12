@@ -2,6 +2,7 @@ package nju.gist.Common;
 
 import nju.gist.Tester.Productor;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -41,5 +42,22 @@ public class Comb extends ArrayList<Integer> {
     @Override
     public Comb clone() {
         return (Comb)super.clone();
+    }
+
+    @Override
+    public String toString() {
+        Iterator<Integer> it = this.iterator();
+        if (! it.hasNext())
+            return "[]";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        for (;;) {
+            Integer e = it.next();
+            sb.append(e.equals(Productor.UNKNOWN) ? "-": e);
+            if (! it.hasNext())
+                return sb.append(']').toString();
+            sb.append(',').append(' ');
+        }
     }
 }

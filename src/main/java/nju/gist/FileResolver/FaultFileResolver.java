@@ -22,10 +22,11 @@ public class FaultFileResolver extends AbstractFileResolver{
         File faultFile = new File(filePath);
         String line;
 
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(faultFile));
-            while ((line = reader.readLine()) != null){
-                if(line.equals(BLANK_LINE) || line.matches(COMMENTS_LINE)) continue;
+        // The FileReader is not buffered and cannot read by line,
+        // so it needs to be wrapped in a buffered class
+        try (BufferedReader reader = new BufferedReader(new FileReader(faultFile))) {
+            while ((line = reader.readLine()) != null) {
+                if (line.equals(BLANK_LINE) || line.matches(COMMENTS_LINE)) continue;
 
                 // i.e. "1:2, 3:2, 5:3" -> {"1:2", "3:2", "5:3"}
                 String[] faultKeyAndValArr = line.split(ITEM_SEPARATOR);
@@ -41,8 +42,7 @@ public class FaultFileResolver extends AbstractFileResolver{
                 faultMaps.add(faultMap);
             }
 
-            reader.close();
-        }catch (IOException io){
+        } catch (IOException io) {
             io.printStackTrace();
         }
 

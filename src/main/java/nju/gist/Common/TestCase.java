@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- *   TestCase is an alias of ArrayList
- *   one testcase represent an abstraction of realistic test cases
+ * TestCase is an alias of ArrayList
+ * one testcase represent an abstraction of realistic test cases
  */
 public class TestCase extends ArrayList<Integer> {
     public TestCase() {
@@ -32,12 +32,11 @@ public class TestCase extends ArrayList<Integer> {
     }
 
     /**
-     *
      * @param t: t-way
      * @return the t-way combination of this testcase
      * (1,2,3,4), t = 2 -> {(1, 2, -, -), (1, -, 3, -), ...}
      */
-    public Set<Comb> tWayComb(int t){
+    public Set<Comb> tWayComb(int t) {
         Set<Comb> res = new HashSet<>();
 
         List<Integer> testCaseIndex = new ArrayList<>();
@@ -53,7 +52,6 @@ public class TestCase extends ArrayList<Integer> {
     }
 
     /**
-     *
      * @return the power set of this testcase, but exclude emptySet
      */
     public Set<Comb> powerSet() {
@@ -68,6 +66,6 @@ public class TestCase extends ArrayList<Integer> {
 
     @Override
     public TestCase clone() {
-        return (TestCase)super.clone();
+        return (TestCase) super.clone();
     }
 }

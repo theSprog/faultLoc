@@ -14,12 +14,14 @@ public class Productor {
     private static final int RIGHT = 1;
     public static final int UNKNOWN = 0;
 
-    private static int faultCaseSize = 0;
+    public static int faultCaseSize = 0;
     // The set of values that each parameter can take
     // i.e. Values[0] = {2, 3} means that the 0th parameter can take 2 and 3.
     public static List<Set<Integer>> ParaValues;
 
     private static boolean has_safe = false;
+    private static boolean safe_enabled = false;
+    public static boolean TWO_VAL_EXP = true;
     private static List<Integer> Safes;
 
     public static void SetParaValues(List<Set<Integer>> Values){
@@ -31,6 +33,11 @@ public class Productor {
         has_safe = true;
         Productor.Safes = safes;
         assert Safes.size() == ParaValues.size();
+    }
+
+    public static void clearSafes() {
+        has_safe = false;
+        Productor.Safes = null;
     }
 
     public static TestCase genTestCase(Schema node, TestCase faultCase) {
@@ -65,17 +72,36 @@ public class Productor {
             if(node.get(i)){
                 productRes.set(i, faultCase.get(i));
             }else {
-                // when do not gen MinFault
-                if(has_safe && provided != UNKNOWN) {
+                if(has_safe && safe_enabled && provided != UNKNOWN) {
                     // if user provided safe values, use it
                     productRes.set(i, Safes.get(i));
                 }else {
                     // else set to default safe values
-                    productRes.set(i, provided);
+                    if(provided == faultCase.get(i)){
+                        productRes.set(i, selectAnother(faultCase, i));
+                    }else {
+                        productRes.set(i, provided);
+                    }
                 }
             }
         }
         return productRes;
+    }
+
+    private static Integer selectAnother(TestCase faultCase, int i) {
+        // if we know the system be binary option
+        if(TWO_VAL_EXP){
+            return faultCase.get(i) % 2 + 1;
+        }
+        Set<Integer> vals = ParaValues.get(i);
+        for (Integer val : vals) {
+            if(!faultCase.get(i).equals(val)){
+                return val;
+            }
+        }
+        // if we arrive here, it must be an error, it must be fixed
+        assert false;
+        return RIGHT;
     }
 
     public static Schema toSchema(Integer node) {
@@ -103,5 +129,13 @@ public class Productor {
             res.set(i);
         }
         return res;
+    }
+
+    public static void disableSafe() {
+        safe_enabled = false;
+    }
+
+    public static void enableSafe() {
+        safe_enabled = true;
     }
 }

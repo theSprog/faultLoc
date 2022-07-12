@@ -15,10 +15,11 @@ public class SOFOTResolver extends AbstractFaultResolver {
     public List<MinFault> findMinFaults() {
         sofot = new SOFOT(checker, faultCase);
 
-        Schema currentPattern = (Schema) faultCasePattern.clone();
+        Schema currentPattern = faultCasePattern.clone();
         Schema faultPattern = sofot.extractOneFaultPattern(currentPattern);
 
-        if (faultPattern != null) {
+        // whether SOFOT does find any fault or not?
+        if (faultPattern != null) { // if it finds
             minFaults.add(Productor.genMinFault(faultPattern, faultCase));
         }
 

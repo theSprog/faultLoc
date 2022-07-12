@@ -48,6 +48,7 @@ public class FICBS {
 
         while (true){
             Schema factor = extractOneFactor(tempNode, U, faultPattern);
+            if(factor.isEmpty()) return null;
 
             faultPattern.or(factor);
 
@@ -71,9 +72,9 @@ public class FICBS {
             boolean pass = checker.executeTestCase(Productor.genTestCase(temp, faultCase));
 
             if(pass){
-                Ccand = (Schema) Clow.clone();
+                Ccand = Clow.clone();
             }else {
-                Ccand = (Schema) Chigh.clone();
+                Ccand = Chigh.clone();
                 U.or(Clow);
             }
         }

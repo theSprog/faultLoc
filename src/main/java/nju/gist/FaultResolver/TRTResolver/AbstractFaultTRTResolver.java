@@ -1,4 +1,4 @@
-package nju.gist.FaultResolver.TNTResolver;
+package nju.gist.FaultResolver.TRTResolver;
 
 import nju.gist.Common.MinFault;
 import nju.gist.Common.TestCase;
@@ -8,11 +8,11 @@ import nju.gist.Tester.Productor;
 import java.util.BitSet;
 import java.util.List;
 
-public abstract class AbstractFaultTNTResolver extends AbstractFaultResolver {
+public abstract class AbstractFaultTRTResolver extends AbstractFaultResolver {
     protected static final boolean UP = true;
     protected static final boolean DOWN = false;
 
-    // 有的 TNT 需要 knownTable, 有的不需要, 留给子类选择
+    // 有的 TRT 需要 knownTable, 有的不需要, 留给子类选择
     protected BitSet knownTable;
 
     protected Integer maxNode;
@@ -54,10 +54,10 @@ public abstract class AbstractFaultTNTResolver extends AbstractFaultResolver {
         for (int i = 0; i < size; i++) {
             relative = node ^ seed;
             if (direct == UP && relative > node) {
-                // 祸及先辈
+                // scourge to node's ancestor
                 stamp(relative, UP);
             } else if (direct == DOWN && relative < node) {
-                // 福泽子孙
+                // blessings to node's children
                 stamp(relative, DOWN);
             }
             seed = seed << 1;
@@ -79,7 +79,7 @@ public abstract class AbstractFaultTNTResolver extends AbstractFaultResolver {
     }
 
     protected void preProcess() {
-        // pass, 这是一个废案
+        // pass, this is a waste case
     }
 
     public abstract List<MinFault> findMinFaults();

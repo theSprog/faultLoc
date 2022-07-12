@@ -186,7 +186,7 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
     }
 
     /**
-     *toy version for count PendingSchemasSize, please use getPendingSchemasSizeAdv instead
+     * toy version for count PendingSchemasSize, please use SchemasUtil::getPendingSchemasSizeAdv instead
      * @return
      */
     public long getPendingSchemasSize() {
@@ -207,90 +207,6 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
         }
 
         return pendingSchemasSize - healthSchemasSize - faultSchemasSize;
-    }
-
-    /**
-     *Advanced version of getPendingSchemasSize
-     * @return the size of Pending Schemas, it might be a large number, so we wrap it by BigInteger
-     */
-    public BigInteger getPendingSchemasSizeAdv() {
-        BigInteger pendingSchemasSize = BigInteger.ONE.shiftLeft(size);
-
-        processFaultCase();
-
-        boolean ComputeFaultSchemas = true;
-        BigInteger faultSchemasSize = getSchemasSizeByBound(ComputeFaultSchemas);
-        BigInteger healthSchemasSize = getSchemasSizeByBound(!ComputeFaultSchemas);
-
-        return pendingSchemasSize.subtract(healthSchemasSize).subtract(faultSchemasSize);
-    }
-
-    /**
-     * formula
-     * |A1 U A2 U A3 ... U Am| = ∑|Ai| - ∑| Ai /\ Aj | + ∑ | Ai /\ Aj /\ Ak | - ... (-1)^m ∑ |A1 /\ A2 /\ A3 ... /\ Am|
-     * We consider each SchemasPath P as a set Ai, Ai = {x | P.low() \preceq x \preceq P.up()}
-     * @param ComputeFaultSchemas, Since faultSchemas and healthSchemas call different processing ways,
-     *                             a variable "ComputeFaultSchemas" is used to make the distinction
-     * @return
-     */
-    private BigInteger getSchemasSizeByBound(boolean ComputeFaultSchemas) {
-        BigInteger resSize = BigInteger.ZERO;
-
-        List<SchemasPath> SchemasPaths = new ArrayList<>();
-        // positive is the signs of numbers,
-        // positive == true => sign is "+", "-" otherwise
-        boolean positive = true;
-
-        if(ComputeFaultSchemas){
-            for (Schema faultSchema : faultSchemas) {
-                SchemasPath faultSchemaPath = new SchemasPath(faultSchema, faultCasePattern);
-                SchemasPaths.add(faultSchemaPath);
-            }
-        }else {
-            for (Schema healthSchema : healthSchemas) {
-                SchemasPath healthSchemaPath = new SchemasPath(healthCasePattern, healthSchema);
-                SchemasPaths.add(healthSchemaPath);
-            }
-        }
-
-        // derive ∑ | A1 /\ A2 /\ ... /\ Ai|, this is Combination of paths in SchemasPaths
-        for (int i = 1; i <= SchemasPaths.size(); i++) {
-            Combination<SchemasPath> pathCombination = Combination.of(SchemasPaths, i);
-            // tempSize denote result number of each ∑
-            BigInteger tempSize = BigInteger.ZERO;
-            for (List<SchemasPath> schemasPathList : pathCombination) {
-                if(ComputeFaultSchemas) {
-                    Schema faultLower = healthCasePattern.clone();
-                    for (SchemasPath schemasPath : schemasPathList) {
-                        faultLower.or(schemasPath.getLow());
-                    }
-                    tempSize = tempSize.add(getSchemaSizeByPath(new SchemasPath(faultLower, faultCasePattern)));
-                }else {
-                    Schema healthUpper = faultCasePattern.clone();
-                    for (SchemasPath schemasPath : schemasPathList) {
-                        healthUpper.and(schemasPath.getUp());
-                    }
-                    tempSize = tempSize.add(getSchemaSizeByPath(new SchemasPath(healthCasePattern, healthUpper)));
-                }
-            }
-
-            // if positive = false, we should subtract tempSize
-            if(!positive) {
-                resSize = resSize.subtract(tempSize);
-            }else {
-                resSize = resSize.add(tempSize);
-            }
-
-            positive = !positive;
-        }
-        return resSize;
-    }
-
-    private BigInteger getSchemaSizeByPath(SchemasPath path) {
-        Schema low = path.getLow();
-        Schema up = path.getUp();
-        Schema diffs = getDiffs(low, up);
-        return BigInteger.ONE.shiftLeft(diffs.cardinality());
     }
 
     private long getSchemasSize(SchemasPath schemasPath, List<SchemasPath> schemasPathGroup) {

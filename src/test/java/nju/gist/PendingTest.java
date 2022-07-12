@@ -1,24 +1,31 @@
 package nju.gist;
 
+import com.alibaba.excel.metadata.Head;
+import com.alibaba.excel.metadata.data.WriteCellData;
+import com.alibaba.excel.write.handler.CellWriteHandler;
+import com.alibaba.excel.write.metadata.holder.WriteSheetHolder;
+import com.alibaba.excel.write.metadata.holder.WriteTableHolder;
+import nju.gist.Common.TestCase;
+import nju.gist.FaultResolver.FIC.FICResolver;
 import nju.gist.FaultResolver.FaultResolver;
-import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.junit.Test;
 
-import java.util.function.Consumer;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
 
 public class PendingTest {
     public static final String PATH = "src\\test\\resources\\nju\\gist\\";
     public String filePath = null;
     private FaultResolver faultResolver;
 
-    private void execute(Consumer<FaultLocalization> flConsumer) {
-        this.faultResolver = new PendingSchemasResolver();
-        flConsumer.accept(new FaultLocalization(filePath, faultResolver));
-    }
-
     public void testCSV(String fileName) {
         this.filePath = PATH + fileName;
-        execute(FaultLocalization::getPendingSchemasSize);
+        this.faultResolver = new FICResolver();
+        Map<TestCase, BigInteger> pendingSchemasSize = new FaultLocalization(filePath, faultResolver).getPendingSchemasSize();
+        System.out.println(pendingSchemasSize);
     }
 
     @Test

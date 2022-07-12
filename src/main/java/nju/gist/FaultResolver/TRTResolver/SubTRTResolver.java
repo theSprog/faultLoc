@@ -1,4 +1,4 @@
-package nju.gist.FaultResolver.TNTResolver;
+package nju.gist.FaultResolver.TRTResolver;
 
 import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
@@ -10,7 +10,7 @@ import java.util.*;
 
 import static nju.gist.FaultResolver.PendingSchemas.SchemasUtil.*;
 
-public class SubTNTResolver extends AbstractFaultTNTResolver {
+public class SubTRTResolver extends AbstractFaultTRTResolver {
     private Set<Schema> HuntingGround;
     private FIC fic;
 

@@ -23,7 +23,8 @@ public class FIC {
 
     /**
      * @param node 输入的测试用例模式
-     * @return null if node hasn't fault else faultPattern;
+     * @return null if node hasn't any fault or can't locate fault else faultPattern;
+     * when we can't  locate fault we must return null, or the while(true) will not end
      * 注意, 这个方法结束后会不改变输入的 node, 因为操作是在内部备份上完成的
      */
     public Schema extractOneFaultPattern(Schema node) {
@@ -33,7 +34,7 @@ public class FIC {
             return null;
         }
 
-        Schema faultPattern = (Schema) node.clone();
+        Schema faultPattern = node.clone();
 
         for (int i = 0; i < size; i++) {
             if (faultPattern.get(i)) {
@@ -46,6 +47,10 @@ public class FIC {
                 }
             }
         }
-        return faultPattern;
+
+//        if(faultPattern.isEmpty()) return null;
+//        return faultPattern;
+
+        return faultPattern.isEmpty() ? null : faultPattern;
     }
 }
