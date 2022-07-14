@@ -39,6 +39,9 @@ public class PendingData extends AbstractData{
     @ExcelProperty("TRT")
     private BigInteger TRT;
 
+    @ExcelProperty("SP")
+    private BigInteger SP;
+
     @ExcelProperty("CMS")
     private BigInteger CMS;
 }

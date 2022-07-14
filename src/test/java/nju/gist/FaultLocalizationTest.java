@@ -14,6 +14,7 @@ import nju.gist.FaultResolver.RI.RI;
 import nju.gist.FaultResolver.RI.RIResolver;
 import nju.gist.FaultResolver.SOFOT.SOFOTResolver;
 import nju.gist.FaultResolver.SP.SPResolver;
+import nju.gist.Tester.Productor;
 import org.junit.Test;
 
 
@@ -27,9 +28,10 @@ public class FaultLocalizationTest {
 
     // common method
     public void testCSV(String fileName) {
+        Productor.enableSafe();
         this.filePath = PATH + fileName;
-        this.faultResolver = new FICBSResolver();
-        new FaultLocalization(filePath, faultResolver).localization();
+        this.faultResolver = new ComFILResolver();
+        new FaultLocalization(filePath, faultResolver).localizationByCA();
     }
 
     // only for ml method

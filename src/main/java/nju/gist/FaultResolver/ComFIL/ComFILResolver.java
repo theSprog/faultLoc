@@ -2,10 +2,12 @@ package nju.gist.FaultResolver.ComFIL;
 
 import nju.gist.Common.Comb;
 import nju.gist.Common.MinFault;
+import nju.gist.Common.Schema;
 import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AbstractFaultResolver;
 import nju.gist.Tester.Productor;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

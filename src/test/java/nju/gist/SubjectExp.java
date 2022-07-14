@@ -46,66 +46,79 @@ public class SubjectExp {
         FaultLocalization fl;
         List<PendingData> pdDatas = new ArrayList<>();
         Productor.disableSafe();
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < subjects.size(); i++) {
             String subject = subjects.get(i);
             logger.info(String.format("Enter %d-th subject: %s", i, subject));
-            String[] project_path = subject.split(PATH)[1].split("/", 2);
-            String project = project_path[0];
-            String path = project_path[1].replaceAll("[.]csv", "");
+            PendingData pdData = new PendingData();
+            fillProjectAndPath(subject, pdData);
 
-//            faultResolver = new FICResolver();
-//            fl = new FaultLocalization(subject, faultResolver);
-//            tcMap = fl.getPendingSchemasSize();
-//            BigInteger FICpdSize = avgPendingSize(tcMap);
-//
-//            faultResolver = new FICBSResolver();
-//            fl = new FaultLocalization(subject, faultResolver);
-//            tcMap = fl.getPendingSchemasSize();
-//            BigInteger FICBSpdSize = avgPendingSize(tcMap);
-//
-//            faultResolver = new AIFLResolver();
-//            fl = new FaultLocalization(subject, faultResolver);
-//            tcMap = fl.getPendingSchemasSize();
-//            BigInteger AIFLpdSize = avgPendingSize(tcMap);
-//
-//            faultResolver = new InverseCTDResolver();
-//            fl = new FaultLocalization(subject, faultResolver);
-//            tcMap = fl.getPendingSchemasSize();
-//            BigInteger InverseCTDpdSize = avgPendingSize(tcMap);
-//
-//            faultResolver = new RIResolver();
-//            fl = new FaultLocalization(subject, faultResolver);
-//            tcMap = fl.getPendingSchemasSize();
-//            BigInteger RIpdSize = avgPendingSize(tcMap);
-//
-//            faultResolver = new SOFOTResolver();
-//            fl = new FaultLocalization(subject, faultResolver);
-//            tcMap = fl.getPendingSchemasSize();
-//            BigInteger SOFOTpdSize = avgPendingSize(tcMap);
+            logger.info("FIC start");
+            faultResolver = new FICResolver();
+            fl = new FaultLocalization(subject, faultResolver);
+            tcMap = fl.getPendingSchemasSize();
+            pdData.setFIC(avgPendingSize(tcMap));
 
-//            faultResolver = new LGResolver(LGKind.SafeValueLG);
-//            fl = new FaultLocalization(subject, faultResolver);
-//            tcMap = fl.getPendingSchemasSize();
-//            BigInteger LG1pdSize = avgPendingSize(tcMap);
+            logger.info("FICBS start");
+            faultResolver = new FICBSResolver();
+            fl = new FaultLocalization(subject, faultResolver);
+            tcMap = fl.getPendingSchemasSize();
+            pdData.setFICBS(avgPendingSize(tcMap));
 
-//            faultResolver = new LGResolver(LGKind.AdvLG);
-//            fl = new FaultLocalization(subject, faultResolver);
-//            tcMap = fl.getPendingSchemasSize();
-//            BigInteger LG2pdSize = avgPendingSize(tcMap);
+            logger.info("AIFL start");
+            faultResolver = new AIFLResolver();
+            fl = new FaultLocalization(subject, faultResolver);
+            tcMap = fl.getPendingSchemasSize();
+            pdData.setAIFL(faultResolver.getSize() > 15 ? null : avgPendingSize(tcMap));
 
-            BigInteger ComFILpdSize = BigInteger.ZERO;
-            BigInteger TRTpdSize = BigInteger.ZERO;
-            BigInteger CMSpdSize = BigInteger.ZERO;
+            logger.info("InverseCTD start");
+            faultResolver = new InverseCTDResolver();
+            fl = new FaultLocalization(subject, faultResolver);
+            tcMap = fl.getPendingSchemasSize();
+            pdData.setInverseCTD(avgPendingSize(tcMap));
 
-            PendingData pendingData = new PendingData();
-            pendingData.setProject(project);
-            pendingData.setPath(path);
-            pendingData.setN(faultResolver.getSize());
+            logger.info("RI start");
+            faultResolver = new RIResolver();
+            fl = new FaultLocalization(subject, faultResolver);
+            tcMap = fl.getPendingSchemasSize();
+            pdData.setRI(avgPendingSize(tcMap));
 
-//            pendingData.setFIC(FICpdSize);
+            logger.info("SOFOT start");
+            faultResolver = new SOFOTResolver();
+            fl = new FaultLocalization(subject, faultResolver);
+            tcMap = fl.getPendingSchemasSize();
+            pdData.setSOFOT(avgPendingSize(tcMap));
 
-            pdDatas.add(pendingData);
+            logger.info("LG1 start");
+            faultResolver = new LGResolver(LGKind.SafeValueLG);
+            fl = new FaultLocalization(subject, faultResolver);
+            tcMap = fl.getPendingSchemasSize();
+            pdData.setLG1(avgPendingSize(tcMap));
+
+            logger.info("LG2 start");
+            faultResolver = new LGResolver(LGKind.AdvLG);
+            fl = new FaultLocalization(subject, faultResolver);
+            tcMap = fl.getPendingSchemasSize();
+            pdData.setLG2(avgPendingSize(tcMap));
+
+            logger.info("SP start");
+            faultResolver = new SPResolver(2);
+            fl = new FaultLocalization(subject, faultResolver);
+            tcMap = fl.getPendingSchemasSize();
+            pdData.setSP(avgPendingSize(tcMap));
+
+            logger.info("ComFIL start");
+            pdData.setComFIL(faultResolver.getSize() > 15 ? null : BigInteger.ZERO);
+            logger.info("TRT start");
+            pdData.setTRT(faultResolver.getSize() > 24 ? null : BigInteger.ZERO);
+            logger.info("CMS start");
+            pdData.setCMS(BigInteger.ZERO);
+
+            pdData.setN(faultResolver.getSize());
+            pdDatas.add(pdData);
         }
+        String recXlsxName = PATH + "PendingData.xlsx";
+        EasyExcel.write(recXlsxName, PendingData.class).sheet("recall").doWrite(pdDatas);
+
     }
 
     private BigInteger avgPendingSize(Map<TestCase, BigInteger> tcMap) {
@@ -588,6 +601,6 @@ public class SubjectExp {
 
     @Test
     public void test() {
-
+        System.out.println("Done!!");
     }
 }

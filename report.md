@@ -37,3 +37,19 @@ additional testcase 的计算方式是将所有错误测试用例所需要的的
 
 execTime 的单位是毫秒
 
+
+
+没有使用 CTA，因为它是 non-adaptive 方法，加在 adaptive 方法中显得有些不伦不类的
+
+OFOT类方法只实现了 SOFOT，而没有实现 OFOT
+
+pending 的算法是对每一条错误测试用例求pending数目，再求对于错误测试用例的平均
+求 pending 时禁用了safe value
+对于LG和SP(2),由于 health schema 太多，直接默认所有的 pairwise 都是对的，这引入一些误差，但不太多
+
+容斥原理计算pending,选择的项数:
+[0,20):全选
+[20,60):5
+[60,100):4
+[100,-):3
+

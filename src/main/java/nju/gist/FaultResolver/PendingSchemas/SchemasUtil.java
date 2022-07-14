@@ -3,7 +3,9 @@ package nju.gist.FaultResolver.PendingSchemas;
 import nju.gist.Common.MinFault;
 import nju.gist.Common.Schema;
 import nju.gist.Common.TestCase;
+import nju.gist.FaultLocalization;
 import nju.gist.FaultResolver.PendingSchemas.PendingSchemasRange.SchemasPath;
+import org.apache.log4j.Logger;
 import org.raistlic.common.permutation.Combination;
 
 import java.math.BigInteger;
@@ -11,11 +13,11 @@ import java.util.*;
 import java.util.function.BiPredicate;
 
 public class SchemasUtil {
+    private static final Logger logger = Logger.getLogger(SchemasUtil.class);
     // i.e. 1101 isSuper 0100,
     // 0100 == 1101 & 0100
 
     /**
-     *
      * @return true if schema is super schema of other
      */
     public static boolean isSuperSchema(Schema schema, Schema other) {
@@ -114,8 +116,7 @@ public class SchemasUtil {
     }
 
     /**
-     *
-     * @param healthSchemas: healthSchemas is this schema which pass the test case
+     * @param healthSchemas:    healthSchemas is this schema which pass the test case
      * @param faultCasePattern: faultCasePattern provide the size of TRT root
      * @return
      */
@@ -139,30 +140,31 @@ public class SchemasUtil {
      * remove Schema if biPredicate(A, B) is true, A、B are both in bound
      * i.e. if biPredicate == isSubSchema, and A is subSchema of B, we remove A from bound
      * otherwise, if biPredicate == isSuperSchema, and A is superSchema of B, we remove A from bound
+     *
      * @param bound
      * @param biPredicate
      */
     public static void simplifyBound(Set<Schema> bound, BiPredicate<Schema, Schema> biPredicate) {
-        List<Schema> list = new ArrayList<>();
+        // candList 选出满足 biPredicate 条件的元素
+        List<Schema> candList = new ArrayList<>();
         for (Schema schema : bound) {
-            for (int i = 0; i <= list.size(); i++) {
+            for (int i = 0; i <= candList.size(); i++) {
                 // Sentinel condition
-                if(i == list.size()){
-                    list.add(schema);
+                if (i == candList.size()) {
+                    candList.add(schema);
                     break;
-                } else if(biPredicate.test(list.get(i), schema)){
-                    list.set(i, schema);
-                    break;
-                }else if(biPredicate.test(schema, list.get(i))){
+                } else if (biPredicate.test(candList.get(i), schema)) {
+                    candList.set(i, schema);
+                } else if (biPredicate.test(schema, candList.get(i))) {
                     break;
                 }
             }
         }
-        bound.retainAll(list);
+        // bound 中只留下 candList 出现过的元素
+        bound.retainAll(candList);
     }
 
     /**
-     *
      * @param tc
      * @param faultCase
      * @return
@@ -172,7 +174,7 @@ public class SchemasUtil {
         Schema res = new Schema(tc.size());
         int size = tc.size();
         for (int i = 0; i < size; i++) {
-            if(tc.get(i).equals(faultCase.get(i))){
+            if (tc.get(i).equals(faultCase.get(i))) {
                 res.set(i);
             }
         }
@@ -182,6 +184,7 @@ public class SchemasUtil {
     /**
      * convert testcases to schemas
      * tc = (0, 2, 3, 0), faultCase = (1, 2, 3, 4) => 0110
+     *
      * @param tcs
      * @param faultCase
      * @return
@@ -199,13 +202,15 @@ public class SchemasUtil {
         Set<Schema> res = new HashSet<>();
         for (MinFault mf : mfs) {
             Schema schema = SchemasUtil.tc2Schema(new TestCase(mf), faultCase);
+            if(schema.isEmpty()) continue;
             res.add(schema);
         }
         return res;
     }
 
     /**
-     *Advanced version of getPendingSchemasSize
+     * Advanced version of getPendingSchemasSize
+     *
      * @return the size of Pending Schemas, it might be a large number, so we wrap it by BigInteger
      */
     public static BigInteger getPendingSchemasSizeAdv(List<MinFault> minFaults, Set<TestCase> healthTestCases, TestCase faultCase) {
@@ -214,10 +219,12 @@ public class SchemasUtil {
 
         Set<Schema> faultSchemas = minFaults2Schemas(minFaults, faultCase);
         simplifyBound(faultSchemas, SchemasUtil::isSuperSchema);
+        logger.info("faultSchemas.size() = " + faultSchemas.size());
 
         Set<Schema> healthSchemas = tcs2Schemas(healthTestCases, faultCase);
         simplifyBound(healthSchemas, SchemasUtil::isSubSchema);
-        System.out.println("N=" + healthSchemas.size());
+        logger.info("healthSchemas.size() = " + healthSchemas.size());
+
         BigInteger faultSchemasSize = getSchemasSizeByBound(faultSchemas, healthSchemas, size, true);
         BigInteger healthSchemasSize = getSchemasSizeByBound(faultSchemas, healthSchemas, size, false);
 
@@ -226,7 +233,7 @@ public class SchemasUtil {
     }
 
     private static Set<Schema> lowBoundFromHTC(Set<TestCase> healthTestCases, TestCase faultCase, int size) {
-        if(healthTestCases.isEmpty()){
+        if (healthTestCases.isEmpty()) {
             return new HashSet<>(List.of(new Schema(size, false)));
         }
         Set<Schema> healthSchemas = tcs2Schemas(healthTestCases, faultCase);
@@ -234,7 +241,7 @@ public class SchemasUtil {
     }
 
     private static Set<Schema> upBoundFromMinFault(List<MinFault> minFaults, TestCase faultCase, int size) {
-        if(minFaults.isEmpty()) {
+        if (minFaults.isEmpty()) {
             return new HashSet<>(List.of(new Schema(size, true)));
         }
         Set<Schema> faultSchemas = minFaults2Schemas(minFaults, faultCase);
@@ -243,6 +250,7 @@ public class SchemasUtil {
 
     /**
      * another version of getPendingSchemasSize
+     *
      * @return the lower bound of Pending Schemas,
      * because the exact Pending Schemas can't compute(it cost too much time!) as the increasing size of faultSchemas and healthSchemas
      */
@@ -263,7 +271,7 @@ public class SchemasUtil {
 
         for (Schema lowBound : lowBounds) {
             for (Schema upBound : upBounds) {
-                if(isSubSchema(lowBound, upBound)){
+                if (isSubSchema(lowBound, upBound)) {
                     if (pathLen(lowBound, upBound) > diffNum) {
                         diffNum = pathLen(lowBound, upBound);
                         lower = lowBound;
@@ -280,14 +288,18 @@ public class SchemasUtil {
      * formula
      * |A1 U A2 U A3 ... U Am| = ∑|Ai| - ∑| Ai /\ Aj | + ∑ | Ai /\ Aj /\ Ak | - ... (-1)^m ∑ |A1 /\ A2 /\ A3 ... /\ Am|
      * We consider each SchemasPath P as a set Ai, Ai = {x | P.low() \preceq x \preceq P.up()}
+     *
      * @param ComputeFault, Since faultSchemas and healthSchemas call different processing ways,
-     *                             a variable "ComputeFaultSchemas" is used to make the distinction
+     *                      a variable "ComputeFaultSchemas" is used to make the distinction
      * @return
      */
     private static BigInteger getSchemasSizeByBound(Set<Schema> faultSchemas, Set<Schema> healthSchemas, int size, boolean ComputeFault) {
         // we can't compute too large-size schemas, because it costs too much time
-        assert faultSchemas.size() <= 20 : String.format("faultSchemas.size(): %d, it's too large!", faultSchemas.size());
-        assert healthSchemas.size() <= 20 : String.format("healthSchemas.size(): %d, it's too large!", healthSchemas.size());
+//        if (ComputeFault){
+//            assert faultSchemas.size() <= 60 : String.format("faultSchemas.size(): %d, it's too large!", faultSchemas.size());
+//        }else {
+//            assert healthSchemas.size() <= 60 : String.format("healthSchemas.size(): %d, it's too large!", healthSchemas.size());
+//        }
         Schema top = new Schema(size, true);
         Schema bottom = new Schema(size, false);
 
@@ -298,12 +310,12 @@ public class SchemasUtil {
         // positive == true => sign is "+", "-" otherwise
         boolean positive = true;
 
-        if(ComputeFault){
+        if (ComputeFault) {
             for (Schema faultSchema : faultSchemas) {
                 SchemasPath faultSchemaPath = new SchemasPath(faultSchema, top);
                 SchemasPaths.add(faultSchemaPath);
             }
-        }else {
+        } else {
             for (Schema healthSchema : healthSchemas) {
                 SchemasPath healthSchemaPath = new SchemasPath(bottom, healthSchema);
                 SchemasPaths.add(healthSchemaPath);
@@ -311,18 +323,19 @@ public class SchemasUtil {
         }
 
         // derive ∑ | A1 /\ A2 /\ ... /\ Ai|, this is Combination of paths in SchemasPaths
-        for (int i = 1; i <= SchemasPaths.size(); i++) {
+        // We only take the first 5 items, which is a compromise on computing power
+        for (int i = 1; i <= adaptiveCombNum(SchemasPaths.size()) ; i++) {
             Combination<SchemasPath> pathCombination = Combination.of(SchemasPaths, i);
             // tempSize denote result number of each ∑
             BigInteger tempSize = BigInteger.ZERO;
             for (List<SchemasPath> schemasPathList : pathCombination) {
-                if(ComputeFault) {
+                if (ComputeFault) {
                     Schema faultLower = bottom.clone();
                     for (SchemasPath schemasPath : schemasPathList) {
                         faultLower.or(schemasPath.getLow());
                     }
                     tempSize = tempSize.add(getSchemaSizeByPath(new SchemasPath(faultLower, top)));
-                }else {
+                } else {
                     Schema healthUpper = top.clone();
                     for (SchemasPath schemasPath : schemasPathList) {
                         healthUpper.and(schemasPath.getUp());
@@ -332,9 +345,9 @@ public class SchemasUtil {
             }
 
             // if positive = false, we should subtract tempSize
-            if(!positive) {
+            if (!positive) {
                 resSize = resSize.subtract(tempSize);
-            }else {
+            } else {
                 resSize = resSize.add(tempSize);
             }
 
@@ -343,10 +356,43 @@ public class SchemasUtil {
         return resSize;
     }
 
+    private static int adaptiveCombNum(int size) {
+        if(size < 20){
+            return size;
+        }else if(size < 60){
+            return 5;
+        }else if(size < 100){
+            return 4;
+        }else {
+            return 3;
+        }
+    }
+
     private static BigInteger getSchemaSizeByPath(SchemasPath path) {
         Schema low = path.getLow();
         Schema up = path.getUp();
         Schema diffs = getDiffs(low, up);
         return BigInteger.ONE.shiftLeft(diffs.cardinality());
+    }
+
+    public static BigInteger getPendingSchemasSizeLGorSP(List<MinFault> minFaults, Set<TestCase> healthTestCases, TestCase faultCase) {
+        int size = faultCase.size();
+        BigInteger totalSchemasSize = BigInteger.ONE.shiftLeft(size);
+
+        Set<Schema> faultSchemas = minFaults2Schemas(minFaults, faultCase);
+        simplifyBound(faultSchemas, SchemasUtil::isSuperSchema);
+        logger.info("faultSchemas.size() = " + faultSchemas.size());
+
+        Set<Schema> healthSchemas = tcs2Schemas(healthTestCases, faultCase);
+        simplifyBound(healthSchemas, SchemasUtil::isSubSchema);
+        logger.info("healthSchemas.size() = " + healthSchemas.size());
+
+        // C(n,1) + C(n,2), n is the size of faultCase
+        // By default all pairwise combinations of LG or SP are correct,
+        // which of course brings some error, but not too much
+        BigInteger healthSchemaSize = BigInteger.valueOf((long) size * (size + 1) / 2);
+        BigInteger faultSchemasSize = getSchemasSizeByBound(faultSchemas, healthSchemas, size, true);
+
+        return totalSchemasSize.subtract(faultSchemasSize).subtract(healthSchemaSize);
     }
 }

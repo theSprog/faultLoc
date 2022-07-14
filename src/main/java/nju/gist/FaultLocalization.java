@@ -3,6 +3,7 @@ package nju.gist;
 import nju.gist.Common.MinFault;
 import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.FaultResolver;
+import nju.gist.FaultResolver.LG.LGResolver;
 import nju.gist.FaultResolver.PendingSchemas.SchemasUtil;
 import nju.gist.FaultResolver.SP.SPResolver;
 import nju.gist.FileResolver.CSVResolver;
@@ -65,22 +66,21 @@ public class FaultLocalization {
 
         for (TestCase faultCase : Tfail) {
             faultResolver.setFaultCase(faultCase);
-//            logger.info("start finding MinFaults");
             List<MinFault> minFaults = faultResolver.findMinFaults();
-//            logger.info("over finding MinFaults");
             Set<TestCase> healthTestCases = faultResolver.getHealthTestCases();
 
 //            long startMil = System.currentTimeMillis();
 //            logger.debug("start computing pendingSchema size");
-            BigInteger pdSize = SchemasUtil.getPendingSchemasSizeAdv(minFaults, healthTestCases, faultCase);
+            BigInteger pdSize;
+            if (faultResolver instanceof LGResolver || faultResolver instanceof SPResolver){
+                pdSize = SchemasUtil.getPendingSchemasSizeLGorSP(minFaults, healthTestCases, faultCase);
+                pdSize = pdSize.compareTo(BigInteger.ZERO) > 0 ? pdSize : BigInteger.ZERO;
+            }else {
+                pdSize = SchemasUtil.getPendingSchemasSizeAdv(minFaults, healthTestCases, faultCase);
+            }
 //            logger.debug("over computing pendingSchema size");
 //            long endMil = System.currentTimeMillis();
             res.put(faultCase, pdSize);
-//            System.out.println(faultCase + " fails, \n" +
-//                    "the pendingSchemas size is: " + pdSize);
-//
-//            System.out.println("ExecutionTime: " + (endMil - startMil) + "ms");
-//            System.out.println();
         }
         return res;
     }
