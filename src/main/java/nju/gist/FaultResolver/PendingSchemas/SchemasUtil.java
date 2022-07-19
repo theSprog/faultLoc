@@ -202,7 +202,7 @@ public class SchemasUtil {
         Set<Schema> res = new HashSet<>();
         for (MinFault mf : mfs) {
             Schema schema = SchemasUtil.tc2Schema(new TestCase(mf), faultCase);
-            if(schema.isEmpty()) continue;
+//            if(schema.isEmpty()) continue;
             res.add(schema);
         }
         return res;

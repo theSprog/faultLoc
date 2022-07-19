@@ -31,13 +31,13 @@ SP 的 degree 设置为 2
 
 precision 的 - 代表不可做, NAN 代表分母为 0 
 recall 的 - 代表不可做
-
+----
 additional testcase 的计算方式是将所有错误测试用例所需要的的additional testcase总和相加除以错误测试用例的数目，
 即平均一条测试用例需要多少additional testcase
 
 execTime 的单位是毫秒
 
-
+----
 
 没有使用 CTA，因为它是 non-adaptive 方法，加在 adaptive 方法中显得有些不伦不类的
 
@@ -52,4 +52,11 @@ pending 的算法是对每一条错误测试用例求pending数目，再求对�
 [20,60):5
 [60,100):4
 [100,-):3
+----
+
+以下三种方法都是使用整个测试用例表定位，所以在测试各种性质时都只执行一次，而不像其他方法那样每一条测试用例执行一次
+AIFL、 ComFIL、SP
+
+---
+相比于之前的bugs.xlsx 少了几项，在于该文件本身就存在一些项是重复的
 

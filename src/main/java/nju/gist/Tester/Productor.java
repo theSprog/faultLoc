@@ -20,6 +20,7 @@ public class Productor {
     public static List<Set<Integer>> ParaValues;
 
     private static boolean has_safe = false;
+    // safe value is not enabled by default
     private static boolean safe_enabled = false;
     public static boolean TWO_VAL_EXP = true;
     private static List<Integer> Safes;

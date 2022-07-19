@@ -1,7 +1,9 @@
 package nju.gist;
 
 import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.converters.NullableObjectConverter;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import nju.gist.Common.MinFault;
 import nju.gist.Common.TestCase;
 import nju.gist.FaultResolver.AIFL.AIFLResolver;
@@ -21,6 +23,8 @@ import nju.gist.FaultResolver.TRTResolver.AdderTRTResolver;
 import nju.gist.Tester.Productor;
 import nju.gist.expdata.*;
 import org.junit.Test;
+import nju.gist.FaultLocalization.TCInfo;
+import nju.gist.FaultLocalization.ADTCInfo;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -33,8 +37,7 @@ import java.util.*;
 import org.apache.log4j.Logger;
 
 public class SubjectExp {
-    private static final String PATH = "src/test/resources/nju/gist/external/";
-    private static final String NEW_LINE = "\n";
+    public static final String PATH = "src/test/resources/nju/gist/external/";
     private FaultResolver faultResolver;
     private static String subjectsFilesPath = PATH + "subjects.txt";
     private static List<String> subjects = parseFilesPath(subjectsFilesPath);
@@ -42,100 +45,110 @@ public class SubjectExp {
 
     @Test
     public void testPendingSize() {
-        Map<TestCase, BigInteger> tcMap;
-        FaultLocalization fl;
-        List<PendingData> pdDatas = new ArrayList<>();
         Productor.disableSafe();
+        FaultLocalization fl;
+        String pdXlsxName = PATH + "PendingData.xlsx";
+        ExcelWriter excelWriter = EasyExcel.write(pdXlsxName, PendingData.class).build();
         for (int i = 0; i < subjects.size(); i++) {
+            int failCaseSize;
             String subject = subjects.get(i);
             logger.info(String.format("Enter %d-th subject: %s", i, subject));
-            PendingData pdData = new PendingData();
-            fillProjectAndPath(subject, pdData);
+            Map<String, List<TCInfo>> tcInfos = new HashMap<>();
 
             logger.info("FIC start");
             faultResolver = new FICResolver();
             fl = new FaultLocalization(subject, faultResolver);
-            tcMap = fl.getPendingSchemasSize();
-            pdData.setFIC(avgPendingSize(tcMap));
+            List<TCInfo> FICTCInfo = fl.getPendingSchemasSize();
+            tcInfos.put("FIC", FICTCInfo);
+            failCaseSize = faultResolver.getSize();
 
             logger.info("FICBS start");
             faultResolver = new FICBSResolver();
             fl = new FaultLocalization(subject, faultResolver);
-            tcMap = fl.getPendingSchemasSize();
-            pdData.setFICBS(avgPendingSize(tcMap));
+            List<TCInfo> FICBSTCInfo = fl.getPendingSchemasSize();
+            tcInfos.put("FICBS", FICBSTCInfo);
 
             logger.info("AIFL start");
             faultResolver = new AIFLResolver();
             fl = new FaultLocalization(subject, faultResolver);
-            tcMap = fl.getPendingSchemasSize();
-            pdData.setAIFL(faultResolver.getSize() > 15 ? null : avgPendingSize(tcMap));
+            List<TCInfo> AIFLTCInfo = fl.getPendingSchemasSize();
+            tcInfos.put("AIFL", AIFLTCInfo);
 
             logger.info("InverseCTD start");
             faultResolver = new InverseCTDResolver();
             fl = new FaultLocalization(subject, faultResolver);
-            tcMap = fl.getPendingSchemasSize();
-            pdData.setInverseCTD(avgPendingSize(tcMap));
+            List<TCInfo> InverseCTDTCInfo = fl.getPendingSchemasSize();
+            tcInfos.put("InverseCTD", InverseCTDTCInfo);
 
             logger.info("RI start");
             faultResolver = new RIResolver();
             fl = new FaultLocalization(subject, faultResolver);
-            tcMap = fl.getPendingSchemasSize();
-            pdData.setRI(avgPendingSize(tcMap));
+            List<TCInfo> RITCInfo = fl.getPendingSchemasSize();
+            tcInfos.put("RI", RITCInfo);
 
             logger.info("SOFOT start");
             faultResolver = new SOFOTResolver();
             fl = new FaultLocalization(subject, faultResolver);
-            tcMap = fl.getPendingSchemasSize();
-            pdData.setSOFOT(avgPendingSize(tcMap));
+            List<TCInfo> SOFOTTCInfo = fl.getPendingSchemasSize();
+            tcInfos.put("SOFOT", SOFOTTCInfo);
 
             logger.info("LG1 start");
             faultResolver = new LGResolver(LGKind.SafeValueLG);
             fl = new FaultLocalization(subject, faultResolver);
-            tcMap = fl.getPendingSchemasSize();
-            pdData.setLG1(avgPendingSize(tcMap));
+            List<TCInfo> LG1TCInfo = fl.getPendingSchemasSize();
+            tcInfos.put("LG1", LG1TCInfo);
 
             logger.info("LG2 start");
             faultResolver = new LGResolver(LGKind.AdvLG);
             fl = new FaultLocalization(subject, faultResolver);
-            tcMap = fl.getPendingSchemasSize();
-            pdData.setLG2(avgPendingSize(tcMap));
+            List<TCInfo> LG2TCInfo = fl.getPendingSchemasSize();
+            tcInfos.put("LG2", LG2TCInfo);
 
             logger.info("SP start");
             faultResolver = new SPResolver(2);
             fl = new FaultLocalization(subject, faultResolver);
-            tcMap = fl.getPendingSchemasSize();
-            pdData.setSP(avgPendingSize(tcMap));
+            List<TCInfo> SPTCInfo = fl.getPendingSchemasSize();
+            tcInfos.put("SP", SPTCInfo);
 
-            logger.info("ComFIL start");
-            pdData.setComFIL(faultResolver.getSize() > 15 ? null : BigInteger.ZERO);
-            logger.info("TRT start");
-            pdData.setTRT(faultResolver.getSize() > 24 ? null : BigInteger.ZERO);
-            logger.info("CMS start");
-            pdData.setCMS(BigInteger.ZERO);
+            List<PendingData> pdDatas = new ArrayList<>();
+            int failCaseNum = FICTCInfo.size();
+            for (int j = 0; j < failCaseNum; j++) {
+                PendingData pdData = new PendingData();
+                pdData.fillProjectAndPath(subject);
+                pdData.setN(failCaseSize);
+                pdData.setIndex(j);
+                pdData.setTestCase(tcInfos.get("FIC").get(j).tc.toString());
 
-            pdData.setN(faultResolver.getSize());
-            pdDatas.add(pdData);
+                pdData.setFIC(tcInfos.get("FIC").get(j).pdSize);
+                pdData.setFICBS(tcInfos.get("FICBS").get(j).pdSize);
+                pdData.setAIFL(failCaseSize > 15 ? null : tcInfos.get("AIFL").get(j).pdSize);
+                pdData.setInverseCTD(tcInfos.get("InverseCTD").get(j).pdSize);
+                pdData.setRI(tcInfos.get("RI").get(j).pdSize);
+                pdData.setSOFOT(tcInfos.get("SOFOT").get(j).pdSize);
+                pdData.setLG1(tcInfos.get("LG1").get(j).pdSize);
+                pdData.setLG2(tcInfos.get("LG2").get(j).pdSize);
+                pdData.setSP(tcInfos.get("SP").get(j).pdSize);
+
+                // This three method must be zero for testcase with small size,
+                // or can not deal with testcase with big size
+                pdData.setComFIL(failCaseSize > 15 ? null : BigInteger.ZERO);
+                pdData.setTRT(failCaseSize > 24 ? null : BigInteger.ZERO);
+                pdData.setCMS(BigInteger.ZERO);
+
+                pdDatas.add(pdData);
+            }
+            WriteSheet writeSheet = EasyExcel.writerSheet("sheet_" + i).build();
+            excelWriter.write(pdDatas, writeSheet);
         }
-        String recXlsxName = PATH + "PendingData.xlsx";
-        EasyExcel.write(recXlsxName, PendingData.class).sheet("recall").doWrite(pdDatas);
-
-    }
-
-    private BigInteger avgPendingSize(Map<TestCase, BigInteger> tcMap) {
-        BigInteger res = BigInteger.ZERO;
-        for (Map.Entry<TestCase, BigInteger> entry : tcMap.entrySet()) {
-            BigInteger v = entry.getValue();
-            res = res.add(v);
-        }
-        return res.divide(BigInteger.valueOf(tcMap.size()));
+        excelWriter.finish();
     }
 
     // precision and recall
     @Test
     public void PRTest() {
+        Productor.enableSafe();
         List<PrecisionData> precisions = new ArrayList<>();
         List<RecallData> recalls = new ArrayList<>();
-        Productor.enableSafe();
         for (int i = 0; i < subjects.size(); i++) {
             String subject = subjects.get(i);
             logger.info(String.format("Enter %d-th subject: %s", i, subject));
@@ -153,7 +166,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setFIC(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setFIC(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setFIC((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("FICBS start");
@@ -161,7 +174,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setFICBS(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setFICBS(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setFICBS((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("AIFL start");
@@ -169,7 +182,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localizationByCA();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setAIFL(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setAIFL(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setAIFL((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("SOFOT start");
@@ -177,7 +190,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setSOFOT(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setSOFOT(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setSOFOT((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("TRT start");
@@ -185,7 +198,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setTRT(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setTRT(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setTRT((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("ComFIL start");
@@ -193,7 +206,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localizationByCA();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setComFIL(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setComFIL(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setComFIL((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("InverseCTD start");
@@ -201,7 +214,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setInverseCTD(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setInverseCTD(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setInverseCTD((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("LG1 start");
@@ -209,7 +222,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setLG1(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setLG1(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setLG1((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("LG2 start");
@@ -217,7 +230,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setLG2(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setLG2(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setLG2((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("RI start");
@@ -225,7 +238,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setRI(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setRI(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setRI((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("SP start");
@@ -233,7 +246,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localizationByCA();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setSP(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setSP(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setSP((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("CMS start");
@@ -241,7 +254,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setCMS(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setCMS(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setCMS((double) correctMFS.size() / realMinFaults.size());
 
             pre.setN(faultResolver.getSize());
@@ -259,9 +272,9 @@ public class SubjectExp {
 
     @Test
     public void noSafePRTest() {
+        Productor.disableSafe();    // the only difference between PRTest and noSafePRTest
         List<NoSafePrecisionData> precisions = new ArrayList<>();
         List<NoSafeRecallData> recalls = new ArrayList<>();
-        Productor.disableSafe();    // the only difference between PRTest and noSafePRTest
         for (int i = 0; i < subjects.size(); i++) {
             String subject = subjects.get(i);
             logger.info(String.format("Enter %d-th subject: %s", i, subject));
@@ -279,7 +292,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setFIC(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setFIC(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setFIC((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("FICBS start");
@@ -287,7 +300,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setFICBS(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setFICBS(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setFICBS((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("AIFL start");
@@ -295,7 +308,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localizationByCA();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setAIFL(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setAIFL(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setAIFL((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("SOFOT start");
@@ -303,7 +316,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setSOFOT(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setSOFOT(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setSOFOT((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("TRT start");
@@ -311,7 +324,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setTRT(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setTRT(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setTRT((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("ComFIL start");
@@ -319,7 +332,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localizationByCA();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setComFIL(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setComFIL(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setComFIL((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("InverseCTD start");
@@ -327,7 +340,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setInverseCTD(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setInverseCTD(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setInverseCTD((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("LG1 start");
@@ -335,7 +348,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setLG1(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setLG1(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setLG1((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("LG2 start");
@@ -343,7 +356,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setLG2(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setLG2(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setLG2((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("RI start");
@@ -351,7 +364,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setRI(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setRI(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setRI((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("SP start");
@@ -359,7 +372,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localizationByCA();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setSP(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setSP(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setSP((double) correctMFS.size() / realMinFaults.size());
 
             logger.info("CMS start");
@@ -367,7 +380,7 @@ public class SubjectExp {
             minFaults = new FaultLocalization(subject, faultResolver).localization();
             realMinFaults = faultResolver.getChecker().faults2minFaults();
             correctMFS = getCorrectMFS(minFaults, realMinFaults);
-            pre.setCMS(minFaults.size() == 0 ? null : (double)correctMFS.size() / minFaults.size());
+            pre.setCMS(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setCMS((double) correctMFS.size() / realMinFaults.size());
 
             pre.setN(faultResolver.getSize());
@@ -384,12 +397,107 @@ public class SubjectExp {
 
     @Test
     public void additionalTestCaseTest() {
-        List<AdditionalTCData> tcDatas = new ArrayList<>();
+        Productor.disableSafe();
+        ExcelWriter excelWriter = EasyExcel.write(PATH + "additionalTC.xlsx", AdditionalTCData.class).build();
+        for (int i = 0; i < subjects.size(); i++) {
+            int failCaseNum;
+            int failCaseSize;
+            String subject = subjects.get(i);
+            logger.info(String.format("Enter %d-th subject: %s", i, subject));
+
+            logger.info("FIC start");
+            faultResolver = new FICResolver();
+            List<ADTCInfo> FICadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+            failCaseSize = faultResolver.getSize();
+            failCaseNum = FICadTC.size();
+
+            logger.info("FICBS start");
+            faultResolver = new FICBSResolver();
+            List<ADTCInfo> FICBSadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("AIFL start");
+            faultResolver = new AIFLResolver();
+            List<ADTCInfo> AIFLadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("InverseCTD start");
+            faultResolver = new InverseCTDResolver();
+            List<ADTCInfo> InverseCTDadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("RI start");
+            faultResolver = new RIResolver();
+            List<ADTCInfo> RIadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("SOFOT start");
+            faultResolver = new SOFOTResolver();
+            List<ADTCInfo> SOFOTadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("LG1 start");
+            faultResolver = new LGResolver(LGKind.SafeValueLG);
+            List<ADTCInfo> LG1adTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("LG2 start");
+            faultResolver = new LGResolver(LGKind.AdvLG);
+            List<ADTCInfo> LG2adTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("ComFIL start");
+            faultResolver = new ComFILResolver();
+            List<ADTCInfo> ComFILadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("TRT start");
+            faultResolver = new AdderTRTResolver();
+            List<ADTCInfo> TRTadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("SP start");
+            faultResolver = new SPResolver(2);
+            List<ADTCInfo> SPadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            logger.info("CMS start");
+            faultResolver = new PendingSchemasResolver();
+            List<ADTCInfo> CMSadTC = new FaultLocalization(subject, faultResolver).getAdTC();
+
+            List<AdditionalTCData> tcDatas = new ArrayList<>();
+            for (int j = 0; j < failCaseNum; j++) {
+                AdditionalTCData tcData = new AdditionalTCData();
+                // necessary information
+                tcData.fillProjectAndPath(subject);
+                tcData.setN(failCaseSize);
+
+                // set every test case information
+                tcData.setIndex(j);
+                tcData.setTestCase(FICadTC.get(j).tc.toString());
+
+                //set additional test case number of every algorithm
+                tcData.setFIC(FICadTC.get(j).additionalTCNum);
+                tcData.setFICBS(FICBSadTC.get(j).additionalTCNum);
+                tcData.setAIFL(failCaseSize > 15 ? null : AIFLadTC.get(j).additionalTCNum);
+                tcData.setInverseCTD(InverseCTDadTC.get(j).additionalTCNum);
+                tcData.setRI(RIadTC.get(j).additionalTCNum);
+                tcData.setSOFOT(SOFOTadTC.get(j).additionalTCNum);
+                tcData.setLG1(LG1adTC.get(j).additionalTCNum);
+                tcData.setLG2(LG2adTC.get(j).additionalTCNum);
+                tcData.setComFIL(failCaseSize > 15 ? null : ComFILadTC.get(j).additionalTCNum);
+                tcData.setTRT(failCaseSize > 24 ? null : TRTadTC.get(j).additionalTCNum);
+                tcData.setSP(failCaseSize > 100 ? null : SPadTC.get(j).additionalTCNum);
+                tcData.setCMS(CMSadTC.get(j).additionalTCNum);
+
+                tcDatas.add(tcData);
+            }
+            WriteSheet writeSheet = EasyExcel.writerSheet("sheetName" + i).build();
+            excelWriter.write(tcDatas, writeSheet);
+        }
+        excelWriter.finish();
+    }
+
+    // average additional TestCase
+    @Test
+    public void additionalTestCaseTestAvg() {
+        Productor.disableSafe();
+        List<AdditionalTCAvgData> tcDatas = new ArrayList<>();
         for (int i = 0; i < subjects.size(); i++) {
             String subject = subjects.get(i);
             logger.info(String.format("Enter %d-th subject: %s", i, subject));
-            AdditionalTCData tcData = new AdditionalTCData();
-            fillProjectAndPath(subject, tcData);
+            AdditionalTCAvgData tcData = new AdditionalTCAvgData();
+            tcData.fillProjectAndPath(subject);
             Double avgAdTC = 0d;
 
             logger.info("FIC start");
@@ -456,112 +564,121 @@ public class SubjectExp {
 
             tcDatas.add(tcData);
         }
-        String additionalTCXlsxName = PATH + "additionalTC.xlsx";
-        EasyExcel.write(additionalTCXlsxName, AdditionalTCData.class).sheet("additionalTC").doWrite(tcDatas);
+        String additionalTCXlsxName = PATH + "additionalTCAvg.xlsx";
+        EasyExcel.write(additionalTCXlsxName, AdditionalTCAvgData.class).sheet("additionalTC").doWrite(tcDatas);
     }
 
     @Test
     public void execTimeTest() {
-        List<TimeData> timeDatas = new ArrayList<>();
-        for (int i = 0; i < subjects.size(); i++) {
-            String subject = subjects.get(i);
-            logger.info(String.format("Enter %d-th subject: %s", i, subject));
-            TimeData time = new TimeData();
-
-            fillProjectAndPath(subject, time);
-            long start = 0;
-            long end = 0;
-
-            logger.info("FIC start");
-            faultResolver = new FICResolver();
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setFIC(end - start);
-
-            logger.info("FICBS start");
-            faultResolver = new FICBSResolver();
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setFICBS(end - start);
-
-            logger.info("AIFL start");
-            faultResolver = new AIFLResolver();
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localizationByCA();
-            end = System.currentTimeMillis();
-            time.setAIFL(faultResolver.getSize() > 15 ? null : end - start);
-
-            logger.info("SOFOT start");
-            faultResolver = new SOFOTResolver();
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setSOFOT(end - start);
-
-            logger.info("TRT start");
-            faultResolver = new AdderTRTResolver();
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setTRT(faultResolver.getSize() > 24 ? null : end - start);
-
-            logger.info("ComFIL start");
-            faultResolver = new ComFILResolver();
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localizationByCA();
-            end = System.currentTimeMillis();
-            time.setComFIL(faultResolver.getSize() > 15 ? null : end - start);
-
-            logger.info("InverseCTD start");
-            faultResolver = new InverseCTDResolver();
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setInverseCTD(end - start);
-
-            logger.info("LG1 start");
-            faultResolver = new LGResolver(LGKind.SafeValueLG);
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setLG1(end - start);
-
-            logger.info("LG2 start");
-            faultResolver = new LGResolver(LGKind.AdvLG);
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setLG2(end - start);
-
-            logger.info("RI start");
-            faultResolver = new RIResolver();
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setRI(end - start);
-
-            logger.info("SP start");
-            faultResolver = new SPResolver(2);
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setSP(faultResolver.getSize() > 100 ? null : end - start);
-
-            logger.info("CMS start");
-            faultResolver = new PendingSchemasResolver();
-            start = System.currentTimeMillis();
-            new FaultLocalization(subject, faultResolver).localization();
-            end = System.currentTimeMillis();
-            time.setCMS(end - start);
-
-            time.setN(faultResolver.getSize());
-
-            timeDatas.add(time);
-        }
+        Productor.disableSafe();
         String timeXlsxName = PATH + "execTime.xlsx";
-        EasyExcel.write(timeXlsxName, TimeData.class).sheet("execTime").doWrite(timeDatas);
+        ExcelWriter excelWriter = EasyExcel.write(timeXlsxName, TimeData.class).build();
+
+        // count represents number of tests
+        for (int count = 1; count <= 10; count++) {
+            List<TimeData> timeDatas = new ArrayList<>();
+            for (int i = 0; i < subjects.size(); i++) {
+                String subject = subjects.get(i);
+                logger.info(String.format("Enter %d-th subject: %s", i, subject));
+                TimeData time = new TimeData();
+                time.fillProjectAndPath(subject);
+                long start = 0;
+                long end = 0;
+
+                logger.info("FIC start");
+                faultResolver = new FICResolver();
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localization();
+                end = System.currentTimeMillis();
+                time.setFIC(end - start);
+
+                logger.info("FICBS start");
+                faultResolver = new FICBSResolver();
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localization();
+                end = System.currentTimeMillis();
+                time.setFICBS(end - start);
+
+                logger.info("AIFL start");
+                faultResolver = new AIFLResolver();
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localizationByCA();
+                end = System.currentTimeMillis();
+                time.setAIFL(faultResolver.getSize() > 15 ? null : end - start);
+
+                logger.info("SOFOT start");
+                faultResolver = new SOFOTResolver();
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localization();
+                end = System.currentTimeMillis();
+                time.setSOFOT(end - start);
+
+                logger.info("TRT start");
+                faultResolver = new AdderTRTResolver();
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localization();
+                end = System.currentTimeMillis();
+                time.setTRT(faultResolver.getSize() > 24 ? null : end - start);
+
+                logger.info("ComFIL start");
+                faultResolver = new ComFILResolver();
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localizationByCA();
+                end = System.currentTimeMillis();
+                time.setComFIL(faultResolver.getSize() > 15 ? null : end - start);
+
+                logger.info("InverseCTD start");
+                faultResolver = new InverseCTDResolver();
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localization();
+                end = System.currentTimeMillis();
+                time.setInverseCTD(end - start);
+
+                logger.info("LG1 start");
+                faultResolver = new LGResolver(LGKind.SafeValueLG);
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localization();
+                end = System.currentTimeMillis();
+                time.setLG1(end - start);
+
+                logger.info("LG2 start");
+                faultResolver = new LGResolver(LGKind.AdvLG);
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localization();
+                end = System.currentTimeMillis();
+                time.setLG2(end - start);
+
+                logger.info("RI start");
+                faultResolver = new RIResolver();
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localization();
+                end = System.currentTimeMillis();
+                time.setRI(end - start);
+
+                logger.info("SP start");
+                faultResolver = new SPResolver(2);
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localizationByCA();
+                end = System.currentTimeMillis();
+                time.setSP(faultResolver.getSize() > 100 ? null : end - start);
+
+                logger.info("CMS start");
+                faultResolver = new PendingSchemasResolver();
+                start = System.currentTimeMillis();
+                new FaultLocalization(subject, faultResolver).localization();
+                end = System.currentTimeMillis();
+                time.setCMS(end - start);
+
+                time.setN(faultResolver.getSize());
+
+                timeDatas.add(time);
+            }
+            WriteSheet writeSheet = EasyExcel.writerSheet("execTime_" + count).build();
+            excelWriter.write(timeDatas, writeSheet);
+        }
+
+        // do not forget finish it!
+        excelWriter.finish();
     }
 
     private void fillProjectAndPath(String subject, AbstractData data) {
@@ -598,6 +715,16 @@ public class SubjectExp {
         }
         return res;
     }
+
+    private BigInteger avgPendingSize(Map<TestCase, BigInteger> tcMap) {
+        BigInteger res = BigInteger.ZERO;
+        for (Map.Entry<TestCase, BigInteger> entry : tcMap.entrySet()) {
+            BigInteger v = entry.getValue();
+            res = res.add(v);
+        }
+        return res.divide(BigInteger.valueOf(tcMap.size()));
+    }
+
 
     @Test
     public void test() {

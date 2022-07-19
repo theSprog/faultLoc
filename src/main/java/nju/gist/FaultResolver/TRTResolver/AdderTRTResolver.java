@@ -7,6 +7,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * if 10001000 is fail, then we assert node in [10001000, 10001111] must be fail,
+ * so we skip this node and directly check 10010000
+ */
 public class AdderTRTResolver extends AbstractFaultTRTResolver {
     private Set<Integer> minFaultNodes;
 

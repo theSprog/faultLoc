@@ -1,6 +1,7 @@
 package nju.gist.expdata;
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.annotation.write.style.ColumnWidth;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -9,6 +10,13 @@ import java.math.BigInteger;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class PendingData extends AbstractData{
+    @ExcelProperty("index")
+    private Integer index;
+
+    @ColumnWidth(20)
+    @ExcelProperty("TestCase")
+    private String testCase;
+
     @ExcelProperty("FIC")
     private BigInteger FIC;
 

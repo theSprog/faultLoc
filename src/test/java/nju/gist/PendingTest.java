@@ -10,6 +10,7 @@ import nju.gist.FaultResolver.FIC.FICResolver;
 import nju.gist.FaultResolver.FaultResolver;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import nju.gist.FaultLocalization.TCInfo;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -24,7 +25,7 @@ public class PendingTest {
     public void testCSV(String fileName) {
         this.filePath = PATH + fileName;
         this.faultResolver = new FICResolver();
-        Map<TestCase, BigInteger> pendingSchemasSize = new FaultLocalization(filePath, faultResolver).getPendingSchemasSize();
+        List<TCInfo> pendingSchemasSize = new FaultLocalization(filePath, faultResolver).getPendingSchemasSize();
         System.out.println(pendingSchemasSize);
     }
 
