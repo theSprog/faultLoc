@@ -33,10 +33,19 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
     private List<SchemasPath> FaultSchemasPathGroup;
     private List<SchemasPath> HealthSchemasPathGroup;
 
-    enum StrategyKind{
+    StrategyKind strategyKind;
+
+    public PendingSchemasResolver() {
+        this.strategyKind = StrategyKind.CMSStrategy;
+    }
+
+    public PendingSchemasResolver(StrategyKind strategyKind) {
+        this.strategyKind = strategyKind;
+    }
+
+    public enum StrategyKind{
         FICStrategy,
         FICBSStrategy,
-        AugChainStrategy,
         CMSStrategy,
         RIStrategy,
     }
@@ -111,9 +120,8 @@ public class PendingSchemasResolver extends AbstractFaultResolver {
 
         IStrategy strategy;
 
-        // 用某种策略处理 pending,
-        // TODO - 此处使用策略模式, 意味着策略可修改
-        StrategyKind strategyKind = StrategyKind.CMSStrategy;
+//        用某种策略处理 pending,
+//        StrategyKind strategyKind = StrategyKind.CMSStrategy;
 
         switch (strategyKind) {
             case FICStrategy:

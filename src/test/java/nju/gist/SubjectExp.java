@@ -2,7 +2,6 @@ package nju.gist;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
-import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import nju.gist.Common.MinFault;
 import nju.gist.Common.TestCase;
@@ -17,7 +16,6 @@ import nju.gist.FaultResolver.LG.LGResolver;
 import nju.gist.FaultResolver.PendingSchemas.PendingSchemasResolver;
 import nju.gist.FaultResolver.RI.RIResolver;
 import nju.gist.FaultResolver.SOFOT.SOFOTResolver;
-import nju.gist.FaultResolver.SP.SP;
 import nju.gist.FaultResolver.SP.SPResolver;
 import nju.gist.FaultResolver.TRTResolver.AdderTRTResolver;
 import nju.gist.Tester.Productor;
@@ -29,10 +27,9 @@ import nju.gist.FaultLocalization.ADTCInfo;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 
@@ -112,6 +109,7 @@ public class SubjectExp {
 
             List<PendingData> pdDatas = new ArrayList<>();
             int failCaseNum = FICTCInfo.size();
+            assert failCaseNum != 0;
             for (int j = 0; j < failCaseNum; j++) {
                 PendingData pdData = new PendingData();
                 pdData.fillProjectAndPath(subject);
@@ -137,7 +135,7 @@ public class SubjectExp {
 
                 pdDatas.add(pdData);
             }
-            WriteSheet writeSheet = EasyExcel.writerSheet("sheet_" + i).build();
+            WriteSheet writeSheet = EasyExcel.writerSheet(pdDatas.get(0).getProject()).build();
             excelWriter.write(pdDatas, writeSheet);
         }
         excelWriter.finish();
@@ -482,7 +480,7 @@ public class SubjectExp {
 
                 tcDatas.add(tcData);
             }
-            WriteSheet writeSheet = EasyExcel.writerSheet("sheetName" + i).build();
+            WriteSheet writeSheet = EasyExcel.writerSheet("subject" + i).build();
             excelWriter.write(tcDatas, writeSheet);
         }
         excelWriter.finish();
@@ -678,6 +676,113 @@ public class SubjectExp {
         }
 
         // do not forget finish it!
+        excelWriter.finish();
+    }
+
+    @Test
+    public void strategyPendingTest(){
+        String strategyXlsxName = PATH + "PendingStrategy.xlsx";
+        ExcelWriter excelWriter = EasyExcel.write(strategyXlsxName, StrategyData.class).build();
+        Set<MinFault> minFaults = null;
+        Set<MinFault> realMinFaults = null;
+        Set<MinFault> correctMFS = null;
+
+        Long start;
+        Long end;
+        for (PendingSchemasResolver.StrategyKind strategyKind : PendingSchemasResolver.StrategyKind.values()) {
+            List<StrategyData> strategyDatas = new ArrayList<>();
+            for (int i = 0; i < subjects.size(); i++) {
+                List<Long> execTimes = new ArrayList<>();
+                String subject = subjects.get(i);
+                logger.info(String.format("%s: Enter %d-th subject: %s", strategyKind, i, subject));
+                StrategyData strategyData = new StrategyData();
+                strategyData.fillProjectAndPath(subject);
+
+                faultResolver = new PendingSchemasResolver(strategyKind);
+                Productor.enableSafe();
+                FaultLocalization faultLocalizationSafe = new FaultLocalization(subject, faultResolver);
+                minFaults = faultLocalizationSafe.localization();
+                realMinFaults = faultResolver.getChecker().faults2minFaults();
+                correctMFS = getCorrectMFS(minFaults, realMinFaults);
+                strategyData.setPrecision(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
+                strategyData.setRecall((double) correctMFS.size() / realMinFaults.size());
+                strategyData.setAdditionalTC(faultLocalizationSafe.getAvgAdTC());
+
+                Productor.disableSafe();
+                FaultLocalization faultLocalizationNoSafe = new FaultLocalization(subject, faultResolver);
+                minFaults = faultLocalizationNoSafe.localization();
+                realMinFaults = faultResolver.getChecker().faults2minFaults();
+                correctMFS = getCorrectMFS(minFaults, realMinFaults);
+                strategyData.setNoSafePrecision(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
+                strategyData.setNoSafeRecall((double) correctMFS.size() / realMinFaults.size());
+                strategyData.setNoSafeAdditionalTC(faultLocalizationNoSafe.getAvgAdTC());
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime1(end - start);
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime2(end - start);
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime3(end - start);
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime4(end - start);
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime5(end - start);
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime6(end - start);
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime7(end - start);
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime8(end - start);
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime9(end - start);
+
+                start = System.currentTimeMillis();
+                faultLocalizationNoSafe.localization();
+                end = System.currentTimeMillis();
+                execTimes.add(end - start);
+                strategyData.setTime10(end - start);
+
+                strategyData.setAvgTime(execTimes.stream().collect(Collectors.averagingLong(Long::longValue)));
+                strategyDatas.add(strategyData);
+            }
+            WriteSheet writeSheet = EasyExcel.writerSheet(strategyKind.toString().replace("Strategy", "")).build();
+            excelWriter.write(strategyDatas, writeSheet);
+        }
         excelWriter.finish();
     }
 
