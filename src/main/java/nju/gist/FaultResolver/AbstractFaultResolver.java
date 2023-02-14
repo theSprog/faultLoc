@@ -105,8 +105,8 @@ public abstract class AbstractFaultResolver implements FaultResolver {
         return checker.getHtc();
     }
 
-    @Override
-    public Integer getSize() {
-        return size;
-    }
+//    @Override
+//    public Integer getSize() {
+//        return size;
+//    }
 }

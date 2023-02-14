@@ -14,9 +14,7 @@ import nju.gist.FaultResolver.PendingSchemas.PendingSchemasRange.SchemasPath;
 import nju.gist.FaultResolver.PendingSchemas.adaptAlgo.*;
 import nju.gist.FaultResolver.RI.RI;
 import nju.gist.Tester.Productor;
-import org.raistlic.common.permutation.Combination;
 
-import java.math.BigInteger;
 import java.util.*;
 
 import static nju.gist.FaultResolver.PendingSchemas.SchemasUtil.*;

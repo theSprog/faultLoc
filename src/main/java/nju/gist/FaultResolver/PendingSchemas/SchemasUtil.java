@@ -229,7 +229,6 @@ public class SchemasUtil {
         BigInteger healthSchemasSize = getSchemasSizeByBound(faultSchemas, healthSchemas, size, false);
 
         return totalSchemasSize.subtract(healthSchemasSize).subtract(faultSchemasSize);
-
     }
 
     private static Set<Schema> lowBoundFromHTC(Set<TestCase> healthTestCases, TestCase faultCase, int size) {

@@ -11,7 +11,6 @@ public interface FaultResolver {
     void setTfailAndTpass(List<TestCase> faultCaseList, List<TestCase> healthCaseList);
     void setFaultCase(TestCase faultCase);
     void setChecker(Checker checker);
-    Integer getSize();
 
     Checker getChecker();
     List<MinFault> findMinFaults();

@@ -36,8 +36,8 @@ import org.apache.log4j.Logger;
 public class SubjectExp {
     public static final String PATH = "src/test/resources/nju/gist/external/";
     private FaultResolver faultResolver;
-    private static String subjectsFilesPath = PATH + "subjects.txt";
-    private static List<String> subjects = parseFilesPath(subjectsFilesPath);
+    private static final String subjectsFilesPath = PATH + "overlap.txt";
+    private static final List<String> subjects = parseFilesPath(subjectsFilesPath);
     private static final Logger logger = Logger.getLogger(SubjectExp.class);
 
     @Test
@@ -46,8 +46,7 @@ public class SubjectExp {
         FaultLocalization fl;
         String pdXlsxName = PATH + "PendingData.xlsx";
         ExcelWriter excelWriter = EasyExcel.write(pdXlsxName, PendingData.class).build();
-        for (int i = 0; i < subjects.size(); i++) {
-            int failCaseSize;
+        for (int i = 116; i < subjects.size(); i++) {
             String subject = subjects.get(i);
             logger.info(String.format("Enter %d-th subject: %s", i, subject));
             Map<String, List<TCInfo>> tcInfos = new HashMap<>();
@@ -57,7 +56,6 @@ public class SubjectExp {
             fl = new FaultLocalization(subject, faultResolver);
             List<TCInfo> FICTCInfo = fl.getPendingSchemasSize();
             tcInfos.put("FIC", FICTCInfo);
-            failCaseSize = faultResolver.getSize();
 
             logger.info("FICBS start");
             faultResolver = new FICBSResolver();
@@ -113,13 +111,13 @@ public class SubjectExp {
             for (int j = 0; j < failCaseNum; j++) {
                 PendingData pdData = new PendingData();
                 pdData.fillProjectAndPath(subject);
-                pdData.setN(failCaseSize);
+                pdData.setN(Productor.faultCaseSize);
                 pdData.setIndex(j);
                 pdData.setTestCase(tcInfos.get("FIC").get(j).tc.toString());
 
                 pdData.setFIC(tcInfos.get("FIC").get(j).pdSize);
                 pdData.setFICBS(tcInfos.get("FICBS").get(j).pdSize);
-                pdData.setAIFL(failCaseSize > 15 ? null : tcInfos.get("AIFL").get(j).pdSize);
+                pdData.setAIFL(Productor.faultCaseSize > 15 ? null : tcInfos.get("AIFL").get(j).pdSize);
                 pdData.setInverseCTD(tcInfos.get("InverseCTD").get(j).pdSize);
                 pdData.setRI(tcInfos.get("RI").get(j).pdSize);
                 pdData.setSOFOT(tcInfos.get("SOFOT").get(j).pdSize);
@@ -129,8 +127,8 @@ public class SubjectExp {
 
                 // This three method must be zero for testcase with small size,
                 // or can not deal with testcase with big size
-                pdData.setComFIL(failCaseSize > 15 ? null : BigInteger.ZERO);
-                pdData.setTRT(failCaseSize > 24 ? null : BigInteger.ZERO);
+                pdData.setComFIL(Productor.faultCaseSize > 15 ? null : BigInteger.ZERO);
+                pdData.setTRT(Productor.faultCaseSize > 24 ? null : BigInteger.ZERO);
                 pdData.setCMS(BigInteger.ZERO);
 
                 pdDatas.add(pdData);
@@ -147,7 +145,7 @@ public class SubjectExp {
         Productor.enableSafe();
         List<PrecisionData> precisions = new ArrayList<>();
         List<RecallData> recalls = new ArrayList<>();
-        for (int i = 0; i < subjects.size(); i++) {
+        for (int i = 3; i < subjects.size(); i++) {
             String subject = subjects.get(i);
             logger.info(String.format("Enter %d-th subject: %s", i, subject));
             Set<MinFault> minFaults = null;
@@ -156,8 +154,8 @@ public class SubjectExp {
             PrecisionData pre = new PrecisionData();
             RecallData rec = new RecallData();
 
-            fillProjectAndPath(subject, pre);
-            fillProjectAndPath(subject, rec);
+            pre.fillProjectAndPath(subject);
+            rec.fillProjectAndPath(subject);
 
             logger.info("FIC start");
             faultResolver = new FICResolver();
@@ -255,8 +253,8 @@ public class SubjectExp {
             pre.setCMS(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setCMS((double) correctMFS.size() / realMinFaults.size());
 
-            pre.setN(faultResolver.getSize());
-            rec.setN(faultResolver.getSize());
+            pre.setN(Productor.faultCaseSize);
+            rec.setN(Productor.faultCaseSize);
 
             precisions.add(pre);
             recalls.add(rec);
@@ -282,8 +280,8 @@ public class SubjectExp {
             NoSafePrecisionData pre = new NoSafePrecisionData();
             NoSafeRecallData rec = new NoSafeRecallData();
 
-            fillProjectAndPath(subject, pre);
-            fillProjectAndPath(subject, rec);
+            pre.fillProjectAndPath(subject);
+            rec.fillProjectAndPath(subject);
 
             logger.info("FIC start");
             faultResolver = new FICResolver();
@@ -381,8 +379,8 @@ public class SubjectExp {
             pre.setCMS(minFaults.size() == 0 ? null : (double) correctMFS.size() / minFaults.size());
             rec.setCMS((double) correctMFS.size() / realMinFaults.size());
 
-            pre.setN(faultResolver.getSize());
-            rec.setN(faultResolver.getSize());
+            pre.setN(Productor.faultCaseSize);
+            rec.setN(Productor.faultCaseSize);
 
             precisions.add(pre);
             recalls.add(rec);
@@ -406,7 +404,7 @@ public class SubjectExp {
             logger.info("FIC start");
             faultResolver = new FICResolver();
             List<ADTCInfo> FICadTC = new FaultLocalization(subject, faultResolver).getAdTC();
-            failCaseSize = faultResolver.getSize();
+            failCaseSize = Productor.faultCaseSize;
             failCaseNum = FICadTC.size();
 
             logger.info("FICBS start");
@@ -511,7 +509,7 @@ public class SubjectExp {
             logger.info("AIFL start");
             faultResolver = new AIFLResolver();
             avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
-            tcData.setAIFL(faultResolver.getSize() > 15 ? null : avgAdTC);
+            tcData.setAIFL(Productor.faultCaseSize > 15 ? null : avgAdTC);
 
             logger.info("SOFOT start");
             faultResolver = new SOFOTResolver();
@@ -521,12 +519,12 @@ public class SubjectExp {
             logger.info("ComFIL start");
             faultResolver = new ComFILResolver();
             avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
-            tcData.setComFIL(faultResolver.getSize() > 15 ? null : avgAdTC);
+            tcData.setComFIL(Productor.faultCaseSize > 15 ? null : avgAdTC);
 
             logger.info("TRT start");
             faultResolver = new AdderTRTResolver();
             avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
-            tcData.setTRT(faultResolver.getSize() > 24 ? null : avgAdTC);
+            tcData.setTRT(Productor.faultCaseSize > 24 ? null : avgAdTC);
 
             logger.info("InverseCTD start");
             faultResolver = new InverseCTDResolver();
@@ -551,14 +549,14 @@ public class SubjectExp {
             logger.info("SP start");
             faultResolver = new SPResolver(2);
             avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
-            tcData.setSP(faultResolver.getSize() > 100 ? null : avgAdTC);
+            tcData.setSP(Productor.faultCaseSize > 100 ? null : avgAdTC);
 
             logger.info("CMS start");
             faultResolver = new PendingSchemasResolver();
             avgAdTC = new FaultLocalization(subject, faultResolver).getAvgAdTC();
             tcData.setCMS(avgAdTC);
 
-            tcData.setN(faultResolver.getSize());
+            tcData.setN(Productor.faultCaseSize);
 
             tcDatas.add(tcData);
         }
@@ -602,7 +600,7 @@ public class SubjectExp {
                 start = System.currentTimeMillis();
                 new FaultLocalization(subject, faultResolver).localizationByCA();
                 end = System.currentTimeMillis();
-                time.setAIFL(faultResolver.getSize() > 15 ? null : end - start);
+                time.setAIFL(Productor.faultCaseSize > 15 ? null : end - start);
 
                 logger.info("SOFOT start");
                 faultResolver = new SOFOTResolver();
@@ -616,14 +614,14 @@ public class SubjectExp {
                 start = System.currentTimeMillis();
                 new FaultLocalization(subject, faultResolver).localization();
                 end = System.currentTimeMillis();
-                time.setTRT(faultResolver.getSize() > 24 ? null : end - start);
+                time.setTRT(Productor.faultCaseSize > 24 ? null : end - start);
 
                 logger.info("ComFIL start");
                 faultResolver = new ComFILResolver();
                 start = System.currentTimeMillis();
                 new FaultLocalization(subject, faultResolver).localizationByCA();
                 end = System.currentTimeMillis();
-                time.setComFIL(faultResolver.getSize() > 15 ? null : end - start);
+                time.setComFIL(Productor.faultCaseSize > 15 ? null : end - start);
 
                 logger.info("InverseCTD start");
                 faultResolver = new InverseCTDResolver();
@@ -658,7 +656,7 @@ public class SubjectExp {
                 start = System.currentTimeMillis();
                 new FaultLocalization(subject, faultResolver).localizationByCA();
                 end = System.currentTimeMillis();
-                time.setSP(faultResolver.getSize() > 100 ? null : end - start);
+                time.setSP(Productor.faultCaseSize > 100 ? null : end - start);
 
                 logger.info("CMS start");
                 faultResolver = new PendingSchemasResolver();
@@ -667,7 +665,7 @@ public class SubjectExp {
                 end = System.currentTimeMillis();
                 time.setCMS(end - start);
 
-                time.setN(faultResolver.getSize());
+                time.setN(Productor.faultCaseSize);
 
                 timeDatas.add(time);
             }
@@ -687,6 +685,16 @@ public class SubjectExp {
         Set<MinFault> realMinFaults = null;
         Set<MinFault> correctMFS = null;
 
+        Map<PendingSchemasResolver.StrategyKind, Set<Integer>> forbid = new HashMap<>();
+        for (PendingSchemasResolver.StrategyKind strategyKind : PendingSchemasResolver.StrategyKind.values()) {
+            forbid.put(strategyKind, new HashSet<>());
+        }
+
+        // 手动记录会 OOM 的 subject
+        forbid.get(PendingSchemasResolver.StrategyKind.FICStrategy).add(18);
+        forbid.get(PendingSchemasResolver.StrategyKind.FICBSStrategy).add(18);
+        forbid.get(PendingSchemasResolver.StrategyKind.RIStrategy).add(18);
+
         Long start;
         Long end;
         for (PendingSchemasResolver.StrategyKind strategyKind : PendingSchemasResolver.StrategyKind.values()) {
@@ -698,7 +706,14 @@ public class SubjectExp {
                 StrategyData strategyData = new StrategyData();
                 strategyData.fillProjectAndPath(subject);
 
+                if(forbid.get(strategyKind).contains(i)){
+                    strategyDatas.add(strategyData);
+                    continue;
+                }
+
                 faultResolver = new PendingSchemasResolver(strategyKind);
+                strategyData.setN(Productor.faultCaseSize);
+
                 Productor.enableSafe();
                 FaultLocalization faultLocalizationSafe = new FaultLocalization(subject, faultResolver);
                 minFaults = faultLocalizationSafe.localization();
@@ -784,14 +799,6 @@ public class SubjectExp {
             excelWriter.write(strategyDatas, writeSheet);
         }
         excelWriter.finish();
-    }
-
-    private void fillProjectAndPath(String subject, AbstractData data) {
-        String[] project_path = subject.split(PATH)[1].split("/", 2);
-        String project = project_path[0];
-        String path = project_path[1].replaceAll("[.]csv", "");
-        data.setProject(project);
-        data.setPath(path);
     }
 
 

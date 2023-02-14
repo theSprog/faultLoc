@@ -1,4 +1,4 @@
 apache/modules/slotmem/mod_slotmem_shm.c
 bash/execute_cmd.c
-cvs/src/buffer.c.csv
-xterm/main.c.csv
+cvs/src/buffer.c
+xterm/main.c
